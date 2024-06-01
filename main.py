@@ -10,45 +10,26 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QSlider, QVBoxLayout, QPushB
 from PyQt6.QtCore import Qt, QCoreApplication, QSystemSemaphore, QLockFile, QTimer, QPropertyAnimation
 from PyQt6.QtGui import QIcon, QAction
 from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume, IAudioEndpointVolume
+from tray_icon import TrayIcon
+from slider_data import SliderData
 
 class MyWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.slider_layouts = []
         self.initUI()
-        # Create a System Tray Icon
-        self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon("resources/storm.png"))  # Set your icon path
-
-        # Create a context menu
-        self.tray_menu = QMenu()
-
-        # Create actions
-        show_action = QAction("Show", self)
-        close_action = QAction("Close", self)
-
-        # Connect actions to functions
-        show_action.triggered.connect(self.show)
-        close_action.triggered.connect(self.exit_app)
-
-        # Add actions to context menu
-        self.tray_menu.addAction(show_action)
-        self.tray_menu.addAction(close_action)
-
-        # Set the context menu
-        self.tray_icon.setContextMenu(self.tray_menu)
         
-        # Show the tray icon
-        self.tray_icon.show()
-        
-        self.loadSliderData()
+        self.tray_icon = TrayIcon(self)
+       
+        self.slider_data = SliderData(self)
+        self.slider_data.load()
         
     def closeEvent(self, event):
         event.ignore()
         self.hide()
 
     def exit_app(self):
-        self.saveSliderData(should_notify=False)
+        self.slider_data.save(should_notify=False)
         QCoreApplication.quit()
 
     def initUI(self):
@@ -148,7 +129,7 @@ class MyWindow(QWidget):
             selected_apps = [item.text() for item in app_list.findItems("*", Qt.MatchFlag.MatchWildcard) if item.checkState() == Qt.CheckState.Checked]
 
             self.addSlider(text, selected_apps, 50)
-            self.saveSliderData()
+            self.slider_data.save()
             
     def check_selection(self, item, app_list, master_volume_item):
         if item == master_volume_item:
@@ -202,26 +183,8 @@ class MyWindow(QWidget):
                 self.slider_layouts.remove(layout)
                 layout.parentWidget().deleteLater()  # Delete the widget containing the layout
                 break
-        self.saveSliderData()
-            
-    def saveSliderData(self, should_notify=True):
-        slider_data = [(layout.itemAt(0).widget().text(), layout.itemAt(1).widget().app_names, layout.itemAt(1).widget().value()) 
-                       for layout in self.slider_layouts]
-        with open('slider_data.pkl', 'wb') as f:
-            pickle.dump(slider_data, f)
-        if should_notify:
-            self.show_notification('Slider data saved successfully!')
-            
-    def loadSliderData(self):
-        try:
-            with open('slider_data.pkl', 'rb') as f:
-                slider_data = pickle.load(f)
-        except FileNotFoundError:
-            return
-
-        for name, app_names, volume in slider_data:
-            self.addSlider(name, app_names, volume)
-            
+        self.slider_data.save()
+                        
     def show_notification(self, message, shouldUseSystem=False):
         if shouldUseSystem:
             notification.notify(
