@@ -6,7 +6,7 @@ from plyer import notification
 from PyQt6.QtWidgets import (QApplication, QWidget, QSlider, QVBoxLayout, QPushButton, QGridLayout, 
                              QHBoxLayout, QScrollArea, QSystemTrayIcon, QMenu, QInputDialog, 
                              QLabel, QListWidget, QListWidgetItem, QDialog, QDialogButtonBox, QMessageBox,
-                             QSizePolicy, QGraphicsOpacityEffect)
+                             QSizePolicy, QGraphicsOpacityEffect, QLineEdit)
 from PyQt6.QtCore import Qt, QCoreApplication, QSystemSemaphore, QLockFile, QTimer, QPropertyAnimation
 from PyQt6.QtGui import QIcon, QAction
 from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume, IAudioEndpointVolume
@@ -97,51 +97,58 @@ class MyWindow(QWidget):
         self.show()
 
     def createSlider(self):
-        text, ok = QInputDialog.getText(self, 'Input Dialog', 'Enter your slider name:')
-        if ok:
-            # Create a list of running apps
-            app_list = QListWidget()
-            sessions = AudioUtilities.GetAllSessions()
-            for session in sessions:
-                if session.Process:
-                    item = QListWidgetItem(session.Process.name())
-                    item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make the item checkable
-                    item.setCheckState(Qt.CheckState.Unchecked)  # Set initial check state to unchecked
-                    app_list.addItem(item)
+        # Create a dialog
+        dialog = QDialog()
+        dialog.setWindowTitle('Create Slider')
 
-            
-            # Create an All Unassigned option
-            all_unassigned_item = QListWidgetItem('All Unassigned')
-            all_unassigned_item.setFlags(all_unassigned_item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make the item checkable
-            all_unassigned_item.setCheckState(Qt.CheckState.Unchecked)  # Set initial check state to unchecked
-            app_list.addItem(all_unassigned_item)
-            
-            # Create a Master Volume option
-            master_volume_item = QListWidgetItem('Master Volume')
-            master_volume_item.setFlags(master_volume_item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make the item checkable
-            master_volume_item.setCheckState(Qt.CheckState.Unchecked)  # Set initial check state to unchecked
-            app_list.addItem(master_volume_item)
-                
-            # Connect the itemChanged signal to a function that deselects all other items when master_volume_item is selected
-            app_list.itemChanged.connect(lambda item: self.check_selection(item, app_list, master_volume_item))
-            
-            # Show the list in a dialog
-            dialog = QDialog()
-            dialog.setWindowTitle('Select apps')
-            dialog.setLayout(QVBoxLayout())
-            dialog.layout().addWidget(app_list)
-            # Add a "Confirm" button
-            button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
-            button_box.accepted.connect(dialog.accept)
-            dialog.layout().addWidget(button_box)
+        # Create a line edit for the name
+        name_edit = QLineEdit()
+        name_edit.setPlaceholderText('Enter your slider name')
 
-            result = dialog.exec()
-            if result == QDialog.DialogCode.Accepted:
-                # Get the selected apps
-                selected_apps = [item.text() for item in app_list.findItems("*", Qt.MatchFlag.MatchWildcard) if item.checkState() == Qt.CheckState.Checked]
+        # Create a list of running apps
+        app_list = QListWidget()
+        sessions = AudioUtilities.GetAllSessions()
+        for session in sessions:
+            if session.Process:
+                item = QListWidgetItem(session.Process.name())
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make the item checkable
+                item.setCheckState(Qt.CheckState.Unchecked)  # Set initial check state to unchecked
+                app_list.addItem(item)
 
-                self.addSlider(text, selected_apps, 50)
-                self.saveSliderData()
+        # Create an All Unassigned option
+        all_unassigned_item = QListWidgetItem('All Unassigned')
+        all_unassigned_item.setFlags(all_unassigned_item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make the item checkable
+        all_unassigned_item.setCheckState(Qt.CheckState.Unchecked)  # Set initial check state to unchecked
+        app_list.addItem(all_unassigned_item)
+
+        # Create a Master Volume option
+        master_volume_item = QListWidgetItem('Master Volume')
+        master_volume_item.setFlags(master_volume_item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make the item checkable
+        master_volume_item.setCheckState(Qt.CheckState.Unchecked)  # Set initial check state to unchecked
+        app_list.addItem(master_volume_item)
+
+        # Connect the itemChanged signal to a function that deselects all other items when master_volume_item is selected
+        app_list.itemChanged.connect(lambda item: self.check_selection(item, app_list, master_volume_item))
+
+        # Add the line edit and list widget to the dialog
+        dialog.setLayout(QVBoxLayout())
+        dialog.layout().addWidget(name_edit)
+        dialog.layout().addWidget(app_list)
+
+        # Add a "Confirm" button
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+        button_box.accepted.connect(dialog.accept)
+        dialog.layout().addWidget(button_box)
+
+        result = dialog.exec()
+
+        # If the "OK" button was clicked, create the slider
+        if result == QDialog.DialogCode.Accepted:
+            text = name_edit.text()
+            selected_apps = [item.text() for item in app_list.findItems("*", Qt.MatchFlag.MatchWildcard) if item.checkState() == Qt.CheckState.Checked]
+
+            self.addSlider(text, selected_apps, 50)
+            self.saveSliderData()
             
     def check_selection(self, item, app_list, master_volume_item):
         if item == master_volume_item:
@@ -163,11 +170,17 @@ class MyWindow(QWidget):
             removeButton = QPushButton("X")
             removeButton.setFixedSize(20, 20)
             removeButton.clicked.connect(lambda: self.removeSlider(slider, removeButton))
+            
+            # Create an "Edit" button
+            edit_button = QPushButton("O")
+            edit_button.setFixedSize(20, 20)
+            # edit_button.clicked.connect(lambda: self.editSlider(slider, name, app_names))
 
             slider_layout = QVBoxLayout()
             slider_layout.addWidget(QLabel(name))  # Add the slider name
             slider_layout.addWidget(slider)
             slider_layout.addWidget(removeButton)
+            slider_layout.addWidget(edit_button)
 
             # Create a widget for the slider layout and set a fixed width
             slider_widget = QWidget()
@@ -177,6 +190,7 @@ class MyWindow(QWidget):
             self.slider_layouts.append(slider_layout)
             self.sliders_layout.insertWidget(self.sliders_layout.count() - 1, slider_widget)  # Insert the widget before the last item (the stretch)
             
+
     def removeSlider(self, slider, button):
         slider.deleteLater()
         button.deleteLater()
