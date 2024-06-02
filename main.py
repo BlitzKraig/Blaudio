@@ -13,10 +13,12 @@ from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume, IAudioEndpointVolume
 from tray_icon import TrayIcon
 from slider_data import SliderData
 from serial_reader import SerialReader
+from slider import Slider
 
 class MyWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.sliders = []
         self.slider_layouts = []
         self.initUI()
         
@@ -134,7 +136,7 @@ class MyWindow(QWidget):
             text = name_edit.text()
             selected_apps = [item.text() for item in app_list.findItems("*", Qt.MatchFlag.MatchWildcard) if item.checkState() == Qt.CheckState.Checked]
 
-            self.addSlider(text, selected_apps, 50)
+            self.addSlider(Slider(text, selected_apps, 50))
             self.slider_data.save()
             
     def check_selection(self, item, app_list, master_volume_item):
@@ -147,36 +149,40 @@ class MyWindow(QWidget):
             if item.checkState() == Qt.CheckState.Checked:
                 master_volume_item.setCheckState(Qt.CheckState.Unchecked)
                        
-    def addSlider(self, name, app_names, volume):
-            slider = QSlider()
-            slider.setOrientation(Qt.Orientation.Vertical)
-            slider.valueChanged.connect(self.change_volume)
-            slider.app_names = app_names
-            slider.setValue(volume)
-            
-            removeButton = QPushButton("X")
-            removeButton.setFixedSize(20, 20)
-            removeButton.clicked.connect(lambda: self.removeSlider(slider, removeButton))
-            
-            # Create an "Edit" button
-            edit_button = QPushButton("O")
-            edit_button.setFixedSize(20, 20)
-            # edit_button.clicked.connect(lambda: self.editSlider(slider, name, app_names))
+    def addSlider(self, slider_object: Slider):
+        # slider_object = Slider(name, app_names, volume, knob_index)
 
-            slider_layout = QVBoxLayout()
-            slider_layout.addWidget(QLabel(name))  # Add the slider name
-            slider_layout.addWidget(slider)
-            slider_layout.addWidget(removeButton)
-            slider_layout.addWidget(edit_button)
+        slider = QSlider()
+        slider.setOrientation(Qt.Orientation.Vertical)
+        slider.valueChanged.connect(self.change_volume)
+        slider.app_names = slider_object.app_names  # Store the app names in the QSlider widget
+        slider.setValue(slider_object.volume)
+        slider.slider_object = slider_object  # Store the Slider object in the QSlider widget
 
-            # Create a widget for the slider layout and set a fixed width
-            slider_widget = QWidget()
-            slider_widget.setLayout(slider_layout)
-            slider_widget.setFixedWidth(60)
+        removeButton = QPushButton("X")
+        removeButton.setFixedSize(20, 20)
+        removeButton.clicked.connect(lambda: self.removeSlider(slider, removeButton))
 
-            self.slider_layouts.append(slider_layout)
-            self.sliders_layout.insertWidget(self.sliders_layout.count() - 1, slider_widget)  # Insert the widget before the last item (the stretch)
-            
+        # Create an "Edit" button
+        edit_button = QPushButton("O")
+        edit_button.setFixedSize(20, 20)
+        # edit_button.clicked.connect(lambda: self.editSlider(slider, name, app_names))
+
+        slider_layout = QVBoxLayout()
+        slider_layout.addWidget(QLabel(slider_object.name))  # Add the slider name
+        slider_layout.addWidget(slider)
+        slider_layout.addWidget(removeButton)
+        slider_layout.addWidget(edit_button)
+
+        # Create a widget for the slider layout and set a fixed width
+        slider_widget = QWidget()
+        slider_widget.setLayout(slider_layout)
+        slider_widget.setFixedWidth(60)
+
+        self.slider_layouts.append(slider_layout)
+        self.sliders_layout.insertWidget(self.sliders_layout.count() - 1, slider_widget)  # Insert the widget before the last item (the stretch)
+
+        self.sliders.append(slider_object)  # Add the Slider object to the list of sliders
 
     def removeSlider(self, slider, button):
         slider.deleteLater()

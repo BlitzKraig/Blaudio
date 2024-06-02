@@ -1,4 +1,5 @@
 import pickle
+from slider import Slider
 
 class SliderData:
     def __init__(self, parent):
@@ -11,12 +12,12 @@ class SliderData:
         except FileNotFoundError:
             return
 
-        for name, app_names, volume in slider_data:
-            self.parent.addSlider(name, app_names, volume)
+        for data in slider_data:
+            slider = Slider.deserialize(data)
+            self.parent.addSlider(slider)
 
     def save(self, should_notify=True):
-        slider_data = [(layout.itemAt(0).widget().text(), layout.itemAt(1).widget().app_names, layout.itemAt(1).widget().value()) 
-                       for layout in self.parent.slider_layouts]
+        slider_data = [slider.serialize() for slider in self.parent.sliders]
         with open('slider_data.pkl', 'wb') as f:
             pickle.dump(slider_data, f)
         if should_notify:
