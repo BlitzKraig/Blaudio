@@ -1,5 +1,5 @@
 import sys
-import pickle
+import os
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from plyer import notification
@@ -18,12 +18,19 @@ from slider import Slider
 class MyWindow(QWidget):
     def __init__(self):
         super().__init__()
+        # Check if we're running as a PyInstaller bundle
+        if getattr(sys, 'frozen', False):
+            # We're running in a PyInstaller bundle
+            base_path = sys._MEIPASS
+        else:
+            # We're running in a normal Python environment
+            base_path = os.path.dirname(__file__)
         self.sliders = []
         self.slider_layouts = []
         self.init_ui()
         
         self.tray_icon = TrayIcon(self)
-        self.setWindowIcon(QIcon("resources/storm.png"))
+        self.setWindowIcon(QIcon(os.path.join(base_path, "resources/storm.png")))
        
         self.slider_data = SliderData(self)
         self.slider_data.load()

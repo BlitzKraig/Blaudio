@@ -1,10 +1,21 @@
+import os
+import sys
 from PyQt6.QtWidgets import QMenu, QSystemTrayIcon
 from PyQt6.QtGui import QIcon, QAction
 
 class TrayIcon(QSystemTrayIcon):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setIcon(QIcon("resources/storm.png"))  # Set your icon path
+        
+         # Check if we're running as a PyInstaller bundle
+        if getattr(sys, 'frozen', False):
+            # We're running in a PyInstaller bundle
+            base_path = sys._MEIPASS
+        else:
+            # We're running in a normal Python environment
+            base_path = os.path.dirname(__file__)
+        
+        self.setIcon(QIcon(os.path.join(base_path, "resources/storm.png")))  # Set your icon path
         self.setToolTip("Blaudio Volume Controller")
         self.tray_menu = QMenu()
         show_action = QAction("Show", self)
