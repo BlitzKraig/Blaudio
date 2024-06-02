@@ -150,8 +150,6 @@ class MyWindow(QWidget):
                 master_volume_item.setCheckState(Qt.CheckState.Unchecked)
                        
     def addSlider(self, slider_object: Slider):
-        # slider_object = Slider(name, app_names, volume, knob_index)
-
         slider = QSlider()
         slider.setOrientation(Qt.Orientation.Vertical)
         slider.valueChanged.connect(self.change_volume)
