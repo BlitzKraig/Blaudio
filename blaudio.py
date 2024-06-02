@@ -38,7 +38,9 @@ class MyWindow(QWidget):
         self.serial_reader = SerialReader('COM4', callback=self.on_knob_update)
         
     def on_knob_update(self, knobs):
-        print(knobs)
+        # print(knobs)
+        # Do nothing
+        pass
         
     def closeEvent(self, event):
         event.ignore()
