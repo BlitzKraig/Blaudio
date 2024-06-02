@@ -1,0 +1,6 @@
+VSVersionInfo(
+    ffi=FixedFileInfo(
+        filevers=(0, 0, 0, 1),
+        prodvers=(0, 0, 0, 1)
+    )
+)

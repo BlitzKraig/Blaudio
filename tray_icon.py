@@ -15,7 +15,7 @@ class TrayIcon(QSystemTrayIcon):
             # We're running in a normal Python environment
             base_path = os.path.dirname(__file__)
         
-        self.setIcon(QIcon(os.path.join(base_path, "resources/storm.png")))  # Set your icon path
+        self.setIcon(QIcon(os.path.join(base_path, "resources/storm.ico")))  # Set your icon path
         self.setToolTip("Blaudio Volume Controller")
         self.tray_menu = QMenu()
         show_action = QAction("Show", self)
