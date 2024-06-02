@@ -18,6 +18,7 @@ from slider import Slider
 class MyWindow(QWidget):
     def __init__(self):
         super().__init__()
+        
         # Check if we're running as a PyInstaller bundle
         if getattr(sys, 'frozen', False):
             # We're running in a PyInstaller bundle
@@ -57,9 +58,10 @@ class MyWindow(QWidget):
         self.slider_data.save(should_notify=False)
         QCoreApplication.quit()
 
-    def init_ui(self):
+    def init_ui(self, start_hidden=True):
         # Create main layout
         self.layout = QGridLayout()
+        self.setHidden(True)
 
       # Create scroll area and container for sliders
         self.scrollArea = QScrollArea()
@@ -99,8 +101,8 @@ class MyWindow(QWidget):
         self.toast_label_opacity_effect = QGraphicsOpacityEffect(self.toast_label)
         self.toast_label.setGraphicsEffect(self.toast_label_opacity_effect)
         
-
-        self.show()
+        if not start_hidden:
+            self.show()
 
     def create_slider(self):
         # Create a dialog
