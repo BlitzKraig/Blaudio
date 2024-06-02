@@ -23,6 +23,7 @@ class MyWindow(QWidget):
         self.init_ui()
         
         self.tray_icon = TrayIcon(self)
+        self.setWindowIcon(QIcon("resources/storm.png"))
        
         self.slider_data = SliderData(self)
         self.slider_data.load()

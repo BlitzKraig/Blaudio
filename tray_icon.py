@@ -5,6 +5,7 @@ class TrayIcon(QSystemTrayIcon):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setIcon(QIcon("resources/storm.png"))  # Set your icon path
+        self.setToolTip("Blaudio Volume Controller")
         self.tray_menu = QMenu()
         show_action = QAction("Show", self)
         close_action = QAction("Close", self)
@@ -13,4 +14,5 @@ class TrayIcon(QSystemTrayIcon):
         self.tray_menu.addAction(show_action)
         self.tray_menu.addAction(close_action)
         self.setContextMenu(self.tray_menu)
+        self.activated.connect(parent.show)
         self.show()
