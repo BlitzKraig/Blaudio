@@ -25,5 +25,9 @@ class TrayIcon(QSystemTrayIcon):
         self.tray_menu.addAction(show_action)
         self.tray_menu.addAction(close_action)
         self.setContextMenu(self.tray_menu)
-        self.activated.connect(parent.show)
+        self.activated.connect(self.on_activated)
         self.show()
+        
+    def on_activated(self, reason):
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self.parent().show()
