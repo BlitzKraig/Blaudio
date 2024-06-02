@@ -20,15 +20,24 @@ class SerialReader:
         self.last_callback_time = time.time()
         
         self.is_connected = False
+        
+        self.heartbeat_message = "BLAUDIO_HEARTBEAT\n"
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.try_connect)
         self.try_connect()
         self.timer.start(retry_interval * 1000)
         
-
+    def send_heartbeat(self):
+        try:
+            self.ser.write(self.heartbeat_message.encode())
+            print("Heartbeat sent.")
+        except serial.SerialException:
+            print("Failed to send heartbeat.")
+            
     def try_connect(self):
         if self.is_connected:
+            self.send_heartbeat()
             return
         print("Trying to connect to the serial port...")
         try:
