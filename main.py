@@ -12,6 +12,7 @@ from PyQt6.QtGui import QIcon, QAction
 from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume, IAudioEndpointVolume
 from tray_icon import TrayIcon
 from slider_data import SliderData
+from serial_reader import SerialReader
 
 class MyWindow(QWidget):
     def __init__(self):
@@ -23,6 +24,11 @@ class MyWindow(QWidget):
        
         self.slider_data = SliderData(self)
         self.slider_data.load()
+    
+        self.serial_reader = SerialReader('COM4', callback=self.on_knob_update)
+        
+    def on_knob_update(self, knobs):
+        print(knobs)
         
     def closeEvent(self, event):
         event.ignore()
