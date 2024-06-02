@@ -93,7 +93,7 @@ class MyWindow(QWidget):
         # self.toast_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.toast_label.setFixedWidth(300)
         self.toast_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.toast_label.setStyleSheet("background-color: purple; color: white; padding: 10px;")
+        self.toast_label.setStyleSheet("background-color: purple; color: white;")
         self.toast_label.hide()
         # Add an opacity effect to the toast label
         self.toast_label_opacity_effect = QGraphicsOpacityEffect(self.toast_label)
@@ -198,6 +198,7 @@ class MyWindow(QWidget):
         edit_button = QPushButton("O")
         edit_button.setFixedSize(20, 20)
         # TOOD: Add edit functionality
+        edit_button.clicked.connect(lambda: self.show_notification("Edit functionality coming soon"))
         # edit_button.clicked.connect(lambda: self.editSlider(slider, name, app_names))
 
         slider_layout = QVBoxLayout()
