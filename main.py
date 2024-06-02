@@ -193,6 +193,13 @@ class MyWindow(QWidget):
                 self.slider_layouts.remove(layout)
                 layout.parentWidget().deleteLater()  # Delete the widget containing the layout
                 break
+
+        # Remove the Slider object associated with the slider
+        for slider_object in self.sliders:
+            if slider_object.name == slider.slider_object.name:
+                self.sliders.remove(slider_object)
+                break
+
         self.slider_data.save()
                         
     def show_notification(self, message, shouldUseSystem=False):
