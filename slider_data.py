@@ -14,7 +14,7 @@ class SliderData:
 
         for data in slider_data:
             slider = Slider.deserialize(data)
-            self.parent.addSlider(slider)
+            self.parent.add_slider(slider)
 
     def save(self, should_notify=True):
         slider_data = [slider.serialize() for slider in self.parent.sliders]

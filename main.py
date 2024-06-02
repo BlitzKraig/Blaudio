@@ -20,7 +20,7 @@ class MyWindow(QWidget):
         super().__init__()
         self.sliders = []
         self.slider_layouts = []
-        self.initUI()
+        self.init_ui()
         
         self.tray_icon = TrayIcon(self)
        
@@ -40,7 +40,7 @@ class MyWindow(QWidget):
         self.slider_data.save(should_notify=False)
         QCoreApplication.quit()
 
-    def initUI(self):
+    def init_ui(self):
         # Create main layout
         self.layout = QGridLayout()
 
@@ -61,7 +61,7 @@ class MyWindow(QWidget):
         # Create add button
         addButton = QPushButton("+")
         addButton.setFixedSize(20, 20)
-        addButton.clicked.connect(self.createSlider)
+        addButton.clicked.connect(self.create_slider)
         self.layout.addWidget(addButton, 1, 1)  # Add button to bottom right
 
         self.setLayout(self.layout)
@@ -85,7 +85,7 @@ class MyWindow(QWidget):
 
         self.show()
 
-    def createSlider(self):
+    def create_slider(self):
         # Create a dialog
         dialog = QDialog()
         dialog.setWindowTitle('Create Slider')
@@ -136,7 +136,7 @@ class MyWindow(QWidget):
             text = name_edit.text()
             selected_apps = [item.text() for item in app_list.findItems("*", Qt.MatchFlag.MatchWildcard) if item.checkState() == Qt.CheckState.Checked]
 
-            self.addSlider(Slider(text, selected_apps, 50))
+            self.add_slider(Slider(text, selected_apps, 50))
             self.slider_data.save()
             
     def check_selection(self, item, app_list, master_volume_item):
@@ -149,7 +149,7 @@ class MyWindow(QWidget):
             if item.checkState() == Qt.CheckState.Checked:
                 master_volume_item.setCheckState(Qt.CheckState.Unchecked)
                        
-    def addSlider(self, slider_object: Slider):
+    def add_slider(self, slider_object: Slider):
         slider = QSlider()
         slider.setOrientation(Qt.Orientation.Vertical)
         slider.valueChanged.connect(self.change_volume)
@@ -159,7 +159,7 @@ class MyWindow(QWidget):
 
         removeButton = QPushButton("X")
         removeButton.setFixedSize(20, 20)
-        removeButton.clicked.connect(lambda: self.removeSlider(slider, removeButton))
+        removeButton.clicked.connect(lambda: self.remove_slider(slider, removeButton))
 
         # Create an "Edit" button
         edit_button = QPushButton("O")
@@ -182,7 +182,7 @@ class MyWindow(QWidget):
 
         self.sliders.append(slider_object)  # Add the Slider object to the list of sliders
 
-    def removeSlider(self, slider, button):
+    def remove_slider(self, slider, button):
         slider.deleteLater()
         button.deleteLater()
 
@@ -223,9 +223,9 @@ class MyWindow(QWidget):
             self.fade_in_animation.start()
 
             # Use a QTimer to start the fade out animation after the given duration
-            QTimer.singleShot(2000, self.startFadeOutAnimation)
+            QTimer.singleShot(2000, self.start_fade_out_animation)
         
-    def startFadeOutAnimation(self):
+    def start_fade_out_animation(self):
         # Create an animation to fade out the toast label
         self.fade_out_animation = QPropertyAnimation(self.toast_label_opacity_effect, b"opacity")
         self.fade_out_animation.setDuration(2000 // 2)
