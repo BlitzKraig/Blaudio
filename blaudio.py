@@ -6,7 +6,7 @@ from plyer import notification
 from PyQt6.QtWidgets import (QApplication, QWidget, QSlider, QVBoxLayout, QPushButton, QGridLayout, 
                              QHBoxLayout, QScrollArea, QSystemTrayIcon, QMenu, QInputDialog, 
                              QLabel, QListWidget, QListWidgetItem, QDialog, QDialogButtonBox, QMessageBox,
-                             QSizePolicy, QGraphicsOpacityEffect, QLineEdit)
+                             QSizePolicy, QGraphicsOpacityEffect, QLineEdit, QComboBox)
 from PyQt6.QtCore import Qt, QCoreApplication, QSystemSemaphore, QLockFile, QTimer, QPropertyAnimation
 from PyQt6.QtGui import QIcon, QAction
 from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume, IAudioEndpointVolume
@@ -26,6 +26,7 @@ class MyWindow(QWidget):
             # We're running in a normal Python environment
             base_path = os.path.dirname(__file__)
         self.sliders = []
+        self.qsliders = {}
         self.slider_layouts = []
         self.init_ui()
         
@@ -38,9 +39,15 @@ class MyWindow(QWidget):
         self.serial_reader = SerialReader('COM4', callback=self.on_knob_update)
         
     def on_knob_update(self, knobs):
-        # print(knobs)
-        # Do nothing
-        pass
+        # TODO: Improve the performance of this, it's messy
+        # Iterate through the knobs
+        for knob_index, knob_value in knobs.items():
+            # Iterate through the sliders
+            for slider in self.sliders:
+                # Check if the slider is associated with the knob's index
+                if slider.knob_index == knob_index:
+                    # Update the slider's value to match the knob's value
+                    self.qsliders[slider].setValue(knob_value)
         
     def closeEvent(self, event):
         event.ignore()
@@ -129,10 +136,20 @@ class MyWindow(QWidget):
         # Connect the itemChanged signal to a function that deselects all other items when master_volume_item is selected
         app_list.itemChanged.connect(lambda item: self.check_selection(item, app_list, master_volume_item))
 
+        # Create a label for knob assignment
+        knob_assignment_label = QLabel("Hardware knob")
+        # Create a dropdown for knob assignment
+        knob_assignment = QComboBox()
+        knob_assignment.addItem("None")
+        for i in range(0, 9):
+            knob_assignment.addItem(str(i))
+
         # Add the line edit and list widget to the dialog
         dialog.setLayout(QVBoxLayout())
         dialog.layout().addWidget(name_edit)
         dialog.layout().addWidget(app_list)
+        dialog.layout().addWidget(knob_assignment_label)
+        dialog.layout().addWidget(knob_assignment)
 
         # Add a "Confirm" button
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
@@ -146,7 +163,12 @@ class MyWindow(QWidget):
             text = name_edit.text()
             selected_apps = [item.text() for item in app_list.findItems("*", Qt.MatchFlag.MatchWildcard) if item.checkState() == Qt.CheckState.Checked]
 
-            self.add_slider(Slider(text, selected_apps, 50))
+            knob_index = knob_assignment.currentText()
+            if knob_index == "None":
+                self.add_slider(Slider(text, selected_apps, 50))
+            else:
+                self.add_slider(Slider(text, selected_apps, 50, knob_index=int(knob_index)))
+                
             self.slider_data.save()
             
     def check_selection(self, item, app_list, master_volume_item):
@@ -166,7 +188,8 @@ class MyWindow(QWidget):
         slider.app_names = slider_object.app_names  # Store the app names in the QSlider widget
         slider.setValue(slider_object.volume)
         slider.slider_object = slider_object  # Store the Slider object in the QSlider widget
-
+        self.qsliders[slider_object] = slider
+        
         removeButton = QPushButton("X")
         removeButton.setFixedSize(20, 20)
         removeButton.clicked.connect(lambda: self.remove_slider(slider, removeButton))
@@ -174,6 +197,7 @@ class MyWindow(QWidget):
         # Create an "Edit" button
         edit_button = QPushButton("O")
         edit_button.setFixedSize(20, 20)
+        # TOOD: Add edit functionality
         # edit_button.clicked.connect(lambda: self.editSlider(slider, name, app_names))
 
         slider_layout = QVBoxLayout()
@@ -203,7 +227,7 @@ class MyWindow(QWidget):
                 self.slider_layouts.remove(layout)
                 layout.parentWidget().deleteLater()  # Delete the widget containing the layout
                 break
-
+        self.qsliders.pop(slider.slider_object)
         # Remove the Slider object associated with the slider
         for slider_object in self.sliders:
             if slider_object.name == slider.slider_object.name:
