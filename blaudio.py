@@ -1,5 +1,6 @@
 import sys
 import os
+import subprocess
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from plyer import notification
@@ -77,6 +78,12 @@ class MyWindow(QWidget):
         # Add stretchable space above the button
         self.layout.setRowStretch(0, 1)
 
+        
+        # Create a new button
+        newButton = QPushButton("🔉")
+        newButton.setFixedSize(20, 20)
+        newButton.clicked.connect(self.open_windows_volume_mixer)
+        # self.layout.addWidget(newButton, 1, 0)  # Add button to bottom left TODO: Add this back in
         # Create add button
         addButton = QPushButton("+")
         addButton.setFixedSize(20, 20)
@@ -302,6 +309,9 @@ class MyWindow(QWidget):
             if app_name in slider.itemAt(1).widget().app_names:
                 return True
         return False
+    
+    def open_windows_volume_mixer(self):
+        subprocess.Popen("SndVol.exe")
             
 
 if __name__ == '__main__':
