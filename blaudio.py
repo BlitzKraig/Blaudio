@@ -24,13 +24,16 @@ class MyWindow(QWidget):
         if getattr(sys, 'frozen', False):
             # We're running in a PyInstaller bundle
             base_path = sys._MEIPASS
+            start_hidden = True
         else:
             # We're running in a normal Python environment
             base_path = os.path.dirname(__file__)
+            start_hidden = False
         self.sliders = []
         self.qsliders = {}
         self.slider_layouts = []
-        self.init_ui()
+        
+        self.init_ui(start_hidden=start_hidden)
         
         self.tray_icon = TrayIcon(self)
         self.setWindowIcon(QIcon(os.path.join(base_path, "resources/storm.ico")))
