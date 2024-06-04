@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>DynamicSlider</class>
- <widget class="QWidget" name="DynamicSlider">
+ <class>DynamicSliderContainer</class>
+ <widget class="QWidget" name="DynamicSliderContainer">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -45,12 +45,12 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QVBoxLayout" name="dynamicSliderExampleVertLayout">
+    <layout class="QVBoxLayout" name="dynamicSliderVertLayout">
      <property name="spacing">
       <number>0</number>
      </property>
      <item alignment="Qt::AlignHCenter">
-      <widget class="QLabel" name="dynamicSliderExampleLabel">
+      <widget class="QLabel" name="dynamicSliderLabel">
        <property name="minimumSize">
         <size>
          <width>100</width>
@@ -72,7 +72,7 @@
       </widget>
      </item>
      <item>
-      <spacer name="verticalSpacer_15">
+      <spacer name="dynamicSliderTopSpacing">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
        </property>
@@ -88,12 +88,12 @@
       </spacer>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_26">
+      <layout class="QHBoxLayout" name="dynamicSliderMainHorzLayout">
        <property name="spacing">
         <number>0</number>
        </property>
        <item>
-        <widget class="QPushButton" name="pushButton_9">
+        <widget class="QPushButton" name="dynamicSliderLeftButton">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -121,7 +121,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QSlider" name="verticalSlider_36">
+        <widget class="QSlider" name="dynamicSliderVolSlider">
          <property name="maximum">
           <number>100</number>
          </property>
@@ -131,7 +131,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_10">
+        <widget class="QPushButton" name="dynamicSliderRightButton">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -161,7 +161,7 @@
       </layout>
      </item>
      <item>
-      <spacer name="verticalSpacer_16">
+      <spacer name="dynamicSliderBottomSpacing">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
        </property>
@@ -177,12 +177,12 @@
       </spacer>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_27">
+      <layout class="QHBoxLayout" name="dynamicSliderTopButtonHorzLayout">
        <property name="spacing">
         <number>0</number>
        </property>
        <item>
-        <widget class="QPushButton" name="dynamicSliderExampleMuteButton">
+        <widget class="QPushButton" name="dynamicSliderMuteButton">
          <property name="minimumSize">
           <size>
            <width>30</width>
@@ -208,12 +208,12 @@
       </layout>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_28">
+      <layout class="QHBoxLayout" name="dynamicSliderBottomButtonHorzLayout">
        <property name="spacing">
         <number>0</number>
        </property>
        <item>
-        <widget class="QPushButton" name="dynamicSliderExampleDeleteButton">
+        <widget class="QPushButton" name="dynamicSliderDeleteButton">
          <property name="minimumSize">
           <size>
            <width>30</width>
@@ -232,7 +232,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="dynamicSliderExampleEditButton">
+        <widget class="QPushButton" name="dynamicSliderEditButton">
          <property name="minimumSize">
           <size>
            <width>30</width>

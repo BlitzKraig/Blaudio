@@ -34,14 +34,14 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout" stretch="6,1">
     <item>
-     <layout class="QHBoxLayout" name="slidersHorzLayout">
+     <layout class="QHBoxLayout" name="slidersFullHorzLayout">
       <item>
        <layout class="QVBoxLayout" name="masterSliderVertLayout">
         <property name="spacing">
          <number>0</number>
         </property>
         <item alignment="Qt::AlignHCenter">
-         <widget class="QLabel" name="label_29">
+         <widget class="QLabel" name="masterSliderLabel">
           <property name="minimumSize">
            <size>
             <width>60</width>
@@ -63,7 +63,7 @@
          </widget>
         </item>
         <item>
-         <spacer name="verticalSpacer_3">
+         <spacer name="masterSliderTopSpacing">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
@@ -79,7 +79,7 @@
          </spacer>
         </item>
         <item alignment="Qt::AlignHCenter">
-         <widget class="QSlider" name="verticalSlider_32">
+         <widget class="QSlider" name="masterSliderVolSlider">
           <property name="maximum">
            <number>100</number>
           </property>
@@ -89,7 +89,7 @@
          </widget>
         </item>
         <item>
-         <spacer name="verticalSpacer_4">
+         <spacer name="masterSliderBottomSpacing">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
@@ -105,7 +105,7 @@
          </spacer>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_13">
+         <layout class="QHBoxLayout" name="masterSliderTopButtonsHorzLayout">
           <property name="spacing">
            <number>0</number>
           </property>
@@ -136,7 +136,7 @@
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_14">
+         <layout class="QHBoxLayout" name="masterSliderBottomButtonsHorzLayout">
           <property name="spacing">
            <number>0</number>
           </property>
@@ -208,7 +208,7 @@
              <number>0</number>
             </property>
             <item>
-             <spacer name="horizontalSpacer">
+             <spacer name="dynamicSlidersSpacer">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
