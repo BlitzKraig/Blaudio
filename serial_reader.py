@@ -6,7 +6,7 @@ import numpy as np
 from PyQt6.QtCore import QTimer
 
 class SerialReader:
-    def __init__(self, port, callback, baudrate=9600, callback_interval=0.05, smoothing_window=10, old_range=(0, 1023), new_range=(0, 100), retry_interval=5):
+    def __init__(self, port, callback, baudrate=9600, callback_interval=0.02, smoothing_window=10, old_range=(0, 1023), new_range=(0, 100), retry_interval=5):
         self.old_min, self.old_max = old_range
         self.new_min, self.new_max = new_range
         self.port = port
