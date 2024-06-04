@@ -1,22 +1,23 @@
 import sys
 import os
 import subprocess
-from ctypes import cast, POINTER
+from ui.main_window import Ui_MainWindow
+from ui.dynamic_slider import Ui_DynamicSliderContainer
 from comtypes import CLSCTX_ALL
 from plyer import notification
 from PyQt6.QtWidgets import (QApplication, QWidget, QSlider, QVBoxLayout, QPushButton, QGridLayout, 
-                             QHBoxLayout, QScrollArea, QSystemTrayIcon, QMenu, QInputDialog, 
-                             QLabel, QListWidget, QListWidgetItem, QDialog, QDialogButtonBox, QMessageBox,
-                             QSizePolicy, QGraphicsOpacityEffect, QLineEdit, QComboBox)
-from PyQt6.QtCore import Qt, QCoreApplication, QSystemSemaphore, QLockFile, QTimer, QPropertyAnimation
-from PyQt6.QtGui import QIcon, QAction
+                             QHBoxLayout, QScrollArea, 
+                             QLabel, QListWidget, QListWidgetItem, QDialog, QDialogButtonBox,
+                             QGraphicsOpacityEffect, QLineEdit, QComboBox, QMainWindow)
+from PyQt6.QtCore import Qt, QCoreApplication, QTimer, QPropertyAnimation
+from PyQt6.QtGui import QIcon
 from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume, IAudioEndpointVolume
 from tray_icon import TrayIcon
 from slider_data import SliderData
 from serial_reader import SerialReader
 from slider import Slider
 
-class MyWindow(QWidget):
+class MyWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         
@@ -29,11 +30,11 @@ class MyWindow(QWidget):
             # We're running in a normal Python environment
             base_path = os.path.dirname(__file__)
             start_hidden = False
+            
         self.sliders = []
-        self.qsliders = {}
-        self.slider_layouts = []
+        self.slider_object_to_volume_slider = {}
         
-        self.init_ui(start_hidden=start_hidden)
+        self.setup_ui(start_hidden=start_hidden)
         
         self.tray_icon = TrayIcon(self)
         self.setWindowIcon(QIcon(os.path.join(base_path, "resources/storm.ico")))
@@ -42,6 +43,43 @@ class MyWindow(QWidget):
         self.slider_data.load()
     
         self.serial_reader = SerialReader('COM4', callback=self.on_knob_update)
+        
+    def closeEvent(self, event):
+        event.ignore()
+        self.hide()
+        
+    def exit_app(self):
+        self.slider_data.save(should_notify=False)
+        QCoreApplication.quit()
+        
+    def setup_ui(self, start_hidden=True):
+        
+        ui = Ui_MainWindow()
+        ui.setupUi(self)
+        
+        self.setWindowTitle("Blaudio")
+        
+        self.sliders_layout = ui.dynamicSlidersHorzLayout
+        
+        ui.addSliderButton.clicked.connect(self.create_slider)
+        ui.openMixerButton.clicked.connect(self.open_windows_volume_mixer)
+        ui.masterSliderVolSlider.valueChanged.connect(lambda value: self.change_volume(value, ['Blaudio: Master Volume']))
+        
+        ui.actionQuit.triggered.connect(self.exit_app)
+        ui.actionSettings.setEnabled(False)
+        ui.actionAbout.triggered.connect(lambda: self.show_notification("Blaudio v0.1"))
+        
+        self.toast_label = QLabel(self)
+        self.toast_label.setFixedWidth(300)
+        self.toast_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.toast_label.setStyleSheet("background-color: purple; color: white;")
+        self.toast_label.hide()
+        self.toast_label_opacity_effect = QGraphicsOpacityEffect(self.toast_label)
+        self.toast_label.setGraphicsEffect(self.toast_label_opacity_effect)
+        self.toast_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+               
+        if not start_hidden:
+            self.show()
         
     def on_knob_update(self, knobs):
         # TODO: Improve the performance of this, it's messy
@@ -52,68 +90,8 @@ class MyWindow(QWidget):
                 # Check if the slider is associated with the knob's index
                 if slider.knob_index == knob_index:
                     # Update the slider's value to match the knob's value
-                    self.qsliders[slider].setValue(knob_value)
+                    self.slider_object_to_volume_slider[slider].setValue(knob_value)
         
-    def closeEvent(self, event):
-        event.ignore()
-        self.hide()
-
-    def exit_app(self):
-        self.slider_data.save(should_notify=False)
-        QCoreApplication.quit()
-
-    def init_ui(self, start_hidden=True):
-        # Create main layout
-        self.layout = QGridLayout()
-        self.setHidden(True)
-
-      # Create scroll area and container for sliders
-        self.scrollArea = QScrollArea()
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.container = QWidget()
-        self.sliders_layout = QHBoxLayout(self.container)
-        self.sliders_layout.addStretch(1)
-        self.scrollArea.setWidget(self.container)
-        self.layout.addWidget(self.scrollArea, 0, 0, 1, -1)  # Add scroll area to top row
-
-
-        # Add stretchable space above the button
-        self.layout.setRowStretch(0, 1)
-
-        
-        # Create a new button
-        newButton = QPushButton("🔉")
-        newButton.setFixedSize(20, 20)
-        newButton.clicked.connect(self.open_windows_volume_mixer)
-        # self.layout.addWidget(newButton, 1, 0)  # Add button to bottom left TODO: Add this back in
-        # Create add button
-        addButton = QPushButton("+")
-        addButton.setFixedSize(20, 20)
-        addButton.clicked.connect(self.create_slider)
-        self.layout.addWidget(addButton, 1, 1)  # Add button to bottom right
-
-        self.setLayout(self.layout)
-
-        self.setGeometry(100, 100, 300, 300)
-        self.setFixedHeight(300)
-        self.setMinimumWidth(300)
-        self.setMaximumWidth(900)
-        self.setWindowTitle('Blaudio')
-    
-        self.toast_label = QLabel(self)
-        # self.toast_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        self.toast_label.setFixedWidth(300)
-        self.toast_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.toast_label.setStyleSheet("background-color: purple; color: white;")
-        self.toast_label.hide()
-        # Add an opacity effect to the toast label
-        self.toast_label_opacity_effect = QGraphicsOpacityEffect(self.toast_label)
-        self.toast_label.setGraphicsEffect(self.toast_label_opacity_effect)
-        
-        if not start_hidden:
-            self.show()
-
     def create_slider(self):
         # Create a dialog
         dialog = QDialog()
@@ -194,56 +172,34 @@ class MyWindow(QWidget):
                 master_volume_item.setCheckState(Qt.CheckState.Unchecked)
                        
     def add_slider(self, slider_object: Slider):
-        slider = QSlider()
-        slider.setOrientation(Qt.Orientation.Vertical)
-        slider.valueChanged.connect(self.change_volume)
-        slider.app_names = slider_object.app_names  # Store the app names in the QSlider widget
-        slider.setValue(slider_object.volume)
-        slider.slider_object = slider_object  # Store the Slider object in the QSlider widget
-        self.qsliders[slider_object] = slider
         
-        removeButton = QPushButton("X")
-        removeButton.setFixedSize(20, 20)
-        removeButton.clicked.connect(lambda: self.remove_slider(slider, removeButton))
-
-        # Create an "Edit" button
-        edit_button = QPushButton("O")
-        edit_button.setFixedSize(20, 20)
-        # TOOD: Add edit functionality
-        edit_button.clicked.connect(lambda: self.show_notification("Edit functionality coming soon"))
-        # edit_button.clicked.connect(lambda: self.editSlider(slider, name, app_names))
-
-        slider_layout = QVBoxLayout()
-        slider_layout.addWidget(QLabel(slider_object.name))  # Add the slider name
-        slider_layout.addWidget(slider)
-        slider_layout.addWidget(removeButton)
-        slider_layout.addWidget(edit_button)
-
-        # Create a widget for the slider layout and set a fixed width
         slider_widget = QWidget()
-        slider_widget.setLayout(slider_layout)
-        slider_widget.setFixedWidth(60)
+        slider_container = Ui_DynamicSliderContainer()
+        slider_container.setupUi(slider_widget)
+        
+        slider_container.widget = slider_widget
+        slider_container.slider_object = slider_object
+        
+        slider_container.dynamicSliderVolSlider.valueChanged.connect(lambda value, apps=slider_object.app_names: self.change_volume(value, apps))
+        slider_container.dynamicSliderVolSlider.setValue(slider_object.volume)
+        
+        self.slider_object_to_volume_slider[slider_object] = slider_container.dynamicSliderVolSlider
+        
+        slider_container.dynamicSliderDeleteButton.clicked.connect(lambda: self.remove_slider(slider_container))
+        slider_container.dynamicSliderEditButton.clicked.connect(lambda: self.show_notification("Edit functionality coming soon"))
 
-        self.slider_layouts.append(slider_layout)
+        slider_container.dynamicSliderLabel.setText(slider_object.name)
+    
         self.sliders_layout.insertWidget(self.sliders_layout.count() - 1, slider_widget)  # Insert the widget before the last item (the stretch)
 
         self.sliders.append(slider_object)  # Add the Slider object to the list of sliders
 
-    def remove_slider(self, slider, button):
-        slider.deleteLater()
-        button.deleteLater()
-
-        for layout in self.slider_layouts:
-            if layout.itemAt(1).widget() == slider:  # The slider is now the second item in the layout
-                label = layout.itemAt(0).widget()  # The label is the first item in the layout
-                label.deleteLater()  # Delete the label
-                self.slider_layouts.remove(layout)
-                layout.parentWidget().deleteLater()  # Delete the widget containing the layout
-                break
-        self.qsliders.pop(slider.slider_object)
+    def remove_slider(self, slider_container):
+        slider_container.widget.deleteLater()
+        self.slider_object_to_volume_slider.pop(slider_container.slider_object)
         # Remove the Slider object associated with the slider
         for slider_object in self.sliders:
-            if slider_object.name == slider.slider_object.name:
+            if slider_object.name == slider_container.slider_object.name:
                 self.sliders.remove(slider_object)
                 break
 
@@ -280,11 +236,9 @@ class MyWindow(QWidget):
         self.fade_out_animation.setEndValue(0)
         self.fade_out_animation.start()
         
-    def change_volume(self, value):
-        slider = self.sender()  # Get the slider that triggered the function
-        app_names = slider.app_names  # Get the app names from the slider
-
-        if 'Master Volume' in app_names:
+    def change_volume(self, value, app_names):
+        
+        if 'Blaudio: Master Volume' in app_names:
             devices = AudioUtilities.GetSpeakers()
             interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
             volume = interface.QueryInterface(IAudioEndpointVolume)
@@ -308,9 +262,10 @@ class MyWindow(QWidget):
                             volume.SetMasterVolume(value / 100.0, None)
     
     def is_app_assigned(self, app_name):
-        for slider in self.slider_layouts:
-            if app_name in slider.itemAt(1).widget().app_names:
-                return True
+        for slider_object in self.sliders:
+            for app_names in slider_object.app_names:
+                if app_name in app_names:
+                    return True
         return False
     
     def open_windows_volume_mixer(self):
