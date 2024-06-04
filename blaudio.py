@@ -32,6 +32,7 @@ class MyWindow(QMainWindow):
             start_hidden = False
             
         self.sliders = []
+        self.masterSlider = None
         self.slider_object_to_volume_slider = {}
         
         self.setup_ui(start_hidden=start_hidden)
@@ -63,7 +64,11 @@ class MyWindow(QMainWindow):
         
         ui.addSliderButton.clicked.connect(self.create_slider)
         ui.openMixerButton.clicked.connect(self.open_windows_volume_mixer)
-        ui.masterSliderVolSlider.valueChanged.connect(lambda value: self.change_volume(value, ['Blaudio: Master Volume']))
+        
+        self.masterSlider = ui.masterSliderVolSlider
+        self.masterSlider.valueChanged.connect(lambda value: self.change_volume(value, ['Blaudio: Master Volume']))
+        self.masterSlider.slider_object = Slider('Master Volume', ['Blaudio: Master Volume'], 50, knob_index=0)
+        self.slider_object_to_volume_slider[self.masterSlider.slider_object] = self.masterSlider
         
         ui.actionQuit.triggered.connect(self.exit_app)
         ui.actionSettings.setEnabled(False)
@@ -91,6 +96,8 @@ class MyWindow(QMainWindow):
                 if slider.knob_index == knob_index:
                     # Update the slider's value to match the knob's value
                     self.slider_object_to_volume_slider[slider].setValue(knob_value)
+            if self.masterSlider.slider_object.knob_index == knob_index:
+                self.masterSlider.setValue(knob_value)
         
     def create_slider(self):
         # Create a dialog
@@ -116,15 +123,6 @@ class MyWindow(QMainWindow):
         all_unassigned_item.setFlags(all_unassigned_item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make the item checkable
         all_unassigned_item.setCheckState(Qt.CheckState.Unchecked)  # Set initial check state to unchecked
         app_list.addItem(all_unassigned_item)
-
-        # Create a Master Volume option
-        master_volume_item = QListWidgetItem('Master Volume')
-        master_volume_item.setFlags(master_volume_item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make the item checkable
-        master_volume_item.setCheckState(Qt.CheckState.Unchecked)  # Set initial check state to unchecked
-        app_list.addItem(master_volume_item)
-
-        # Connect the itemChanged signal to a function that deselects all other items when master_volume_item is selected
-        app_list.itemChanged.connect(lambda item: self.check_selection(item, app_list, master_volume_item))
 
         # Create a label for knob assignment
         knob_assignment_label = QLabel("Hardware knob")
@@ -161,16 +159,6 @@ class MyWindow(QMainWindow):
                 
             self.slider_data.save()
             
-    def check_selection(self, item, app_list, master_volume_item):
-        if item == master_volume_item:
-            if item.checkState() == Qt.CheckState.Checked:
-                for i in range(app_list.count()):
-                    if app_list.item(i) != master_volume_item:
-                        app_list.item(i).setCheckState(Qt.CheckState.Unchecked)
-        elif item != master_volume_item:
-            if item.checkState() == Qt.CheckState.Checked:
-                master_volume_item.setCheckState(Qt.CheckState.Unchecked)
-                       
     def add_slider(self, slider_object: Slider):
         
         slider_widget = QWidget()
