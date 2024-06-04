@@ -71,16 +71,18 @@ class MyWindow(QMainWindow):
         ui.openMixerButton.clicked.connect(self.open_windows_volume_mixer)
         
         self.master_slider = ui.masterSliderVolSlider
-        self.master_slider.valueChanged.connect(lambda value: self.change_volume(value, ['Blaudio: Master Volume']))
         
         loaded_master = self.slider_data.load_master()
         self.master_slider.slider_object = loaded_master if loaded_master else Slider('Master Volume', ['Blaudio: Master Volume'], 50, knob_index=0)
+        self.master_slider.setValue(self.master_slider.slider_object.volume)
+        self.master_slider.valueChanged.connect(lambda value: self.change_volume(value, self.master_slider.slider_object))
             
         self.slider_object_to_volume_slider[self.master_slider.slider_object] = self.master_slider
         
-        ui.masterSliderMuteButton.clicked.connect(lambda active: self.toggle_mute(self.master_slider.slider_object))
         if(self.master_slider.slider_object.mute):
             ui.masterSliderMuteButton.setText("🔊")
+            
+        ui.masterSliderMuteButton.clicked.connect(lambda active: self.toggle_mute(self.master_slider.slider_object))
         
         ui.actionQuit.triggered.connect(self.exit_app)
         ui.actionSettings.setEnabled(False)
@@ -182,7 +184,7 @@ class MyWindow(QMainWindow):
         slider_container.widget = slider_widget
         slider_container.slider_object = slider_object
         
-        slider_container.dynamicSliderVolSlider.valueChanged.connect(lambda value, apps=slider_object.app_names: self.change_volume(value, apps))
+        slider_container.dynamicSliderVolSlider.valueChanged.connect(lambda value, apps=slider_object.app_names: self.change_volume(value, slider_container.slider_object))
         slider_container.dynamicSliderVolSlider.setValue(slider_object.volume)
         
         slider_container.dynamicSliderMuteButton.clicked.connect(lambda active, apps=slider_object.app_names: self.toggle_mute(slider_container.slider_object))
@@ -269,9 +271,9 @@ class MyWindow(QMainWindow):
         self.slider_data.save_master()
         
         
-    def change_volume(self, value, app_names):
-        
-        if 'Blaudio: Master Volume' in app_names:
+    def change_volume(self, value, slider_object):
+        slider_object.volume = value
+        if 'Blaudio: Master Volume' in slider_object.app_names:
             devices = AudioUtilities.GetSpeakers()
             interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
             volume = interface.QueryInterface(IAudioEndpointVolume)
@@ -283,13 +285,13 @@ class MyWindow(QMainWindow):
             sessions = AudioUtilities.GetAllSessions()
             for session in sessions:
                     if session.Process:
-                        if 'All Unassigned' in app_names:
+                        if 'All Unassigned' in slider_object.app_names:
                             # Change the volume of the app if it's not assigned to another slider
                             if not self.is_app_assigned(session.Process.name()):
                                 volume = session._ctl.QueryInterface(ISimpleAudioVolume)
                                 # Convert QSlider value range (0-100) to volume range (0.0-1.0)
                                 volume.SetMasterVolume(value / 100.0, None)
-                        elif session.Process.name() in app_names:
+                        elif session.Process.name() in slider_object.app_names:
                             volume = session._ctl.QueryInterface(ISimpleAudioVolume)
                             # Convert QSlider value range (0-100) to volume range (0.0-1.0)
                             volume.SetMasterVolume(value / 100.0, None)
