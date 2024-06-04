@@ -15,4 +15,7 @@ def buildUI(c):
     c.run("pyuic6 ui/main_window.ui -o ui/main_window.py")
     c.run("pyuic6 ui/dynamic_slider.ui -o ui/dynamic_slider.py")
     
+@task
+def buildEXE(c):
+    c.run("pyinstaller blaudio.spec")
     

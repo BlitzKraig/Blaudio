@@ -72,7 +72,9 @@ class MyWindow(QMainWindow):
         
         ui.actionQuit.triggered.connect(self.exit_app)
         ui.actionSettings.setEnabled(False)
-        ui.actionAbout.triggered.connect(lambda: self.show_notification("Blaudio v0.1"))
+        
+        self.version_number = "v0.0.3"
+        ui.actionAbout.triggered.connect(lambda: self.show_notification(f"Blaudio {self.version_number}"))
         
         self.toast_label = QLabel(self)
         self.toast_label.setFixedWidth(300)
