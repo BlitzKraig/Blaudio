@@ -31,8 +31,10 @@ class MyWindow(QMainWindow):
             base_path = os.path.dirname(__file__)
             start_hidden = False
             
+        self.slider_data = SliderData(self)
+        
         self.sliders = []
-        self.masterSlider = None
+        self.master_slider = None
         self.slider_object_to_volume_slider = {}
         
         self.setup_ui(start_hidden=start_hidden)
@@ -40,7 +42,6 @@ class MyWindow(QMainWindow):
         self.tray_icon = TrayIcon(self)
         self.setWindowIcon(QIcon(os.path.join(base_path, "resources/storm.ico")))
        
-        self.slider_data = SliderData(self)
         self.slider_data.load()
     
         self.serial_reader = SerialReader('COM4', callback=self.on_knob_update)
@@ -65,10 +66,17 @@ class MyWindow(QMainWindow):
         ui.addSliderButton.clicked.connect(self.create_slider)
         ui.openMixerButton.clicked.connect(self.open_windows_volume_mixer)
         
-        self.masterSlider = ui.masterSliderVolSlider
-        self.masterSlider.valueChanged.connect(lambda value: self.change_volume(value, ['Blaudio: Master Volume']))
-        self.masterSlider.slider_object = Slider('Master Volume', ['Blaudio: Master Volume'], 50, knob_index=0)
-        self.slider_object_to_volume_slider[self.masterSlider.slider_object] = self.masterSlider
+        self.master_slider = ui.masterSliderVolSlider
+        self.master_slider.valueChanged.connect(lambda value: self.change_volume(value, ['Blaudio: Master Volume']))
+        
+        loaded_master = self.slider_data.load_master()
+        self.master_slider.slider_object = loaded_master if loaded_master else Slider('Master Volume', ['Blaudio: Master Volume'], 50, knob_index=0)
+            
+        self.slider_object_to_volume_slider[self.master_slider.slider_object] = self.master_slider
+        
+        ui.masterSliderMuteButton.clicked.connect(lambda active: self.toggle_mute(self.master_slider.slider_object))
+        if(self.master_slider.slider_object.mute):
+            ui.masterSliderMuteButton.setText("🔊")
         
         ui.actionQuit.triggered.connect(self.exit_app)
         ui.actionSettings.setEnabled(False)
@@ -98,8 +106,8 @@ class MyWindow(QMainWindow):
                 if slider.knob_index == knob_index:
                     # Update the slider's value to match the knob's value
                     self.slider_object_to_volume_slider[slider].setValue(knob_value)
-            if self.masterSlider.slider_object.knob_index == knob_index:
-                self.masterSlider.setValue(knob_value)
+            if self.master_slider.slider_object.knob_index == knob_index:
+                self.master_slider.setValue(knob_value)
         
     def create_slider(self):
         # Create a dialog
@@ -173,6 +181,10 @@ class MyWindow(QMainWindow):
         slider_container.dynamicSliderVolSlider.valueChanged.connect(lambda value, apps=slider_object.app_names: self.change_volume(value, apps))
         slider_container.dynamicSliderVolSlider.setValue(slider_object.volume)
         
+        slider_container.dynamicSliderMuteButton.clicked.connect(lambda active, apps=slider_object.app_names: self.toggle_mute(slider_container.slider_object))
+        if slider_object.mute:
+            slider_container.dynamicSliderMuteButton.setText("🔊")
+        
         self.slider_object_to_volume_slider[slider_object] = slider_container.dynamicSliderVolSlider
         
         slider_container.dynamicSliderDeleteButton.clicked.connect(lambda: self.remove_slider(slider_container))
@@ -225,6 +237,33 @@ class MyWindow(QMainWindow):
         self.fade_out_animation.setStartValue(1)
         self.fade_out_animation.setEndValue(0)
         self.fade_out_animation.start()
+        
+    def toggle_mute(self, slider_object):
+        slider_object.mute = not slider_object.mute
+        if slider_object.mute:
+            self.sender().setText("🔊")
+        else:
+            self.sender().setText("🔇")
+        if 'Blaudio: Master Volume' in slider_object.app_names:
+            devices = AudioUtilities.GetSpeakers()
+            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+            volume = interface.QueryInterface(IAudioEndpointVolume)
+            volume.SetMute(slider_object.mute, None)    
+        else:
+            sessions = AudioUtilities.GetAllSessions()
+            for session in sessions:
+                    if session.Process:
+                        if 'All Unassigned' in slider_object.app_names:
+                            # Change the volume of the app if it's not assigned to another slider
+                            if not self.is_app_assigned(session.Process.name()):
+                                volume = session._ctl.QueryInterface(ISimpleAudioVolume)
+                                volume.SetMute(slider_object.mute, None)
+                        elif session.Process.name() in slider_object.app_names:
+                            volume = session._ctl.QueryInterface(ISimpleAudioVolume)
+                            volume.SetMute(slider_object.mute, None)
+        self.slider_data.save()
+        self.slider_data.save_master()
+        
         
     def change_volume(self, value, app_names):
         
