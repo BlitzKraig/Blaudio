@@ -43,6 +43,10 @@ class MyWindow(QMainWindow):
         self.setWindowIcon(QIcon(os.path.join(base_path, "resources/storm.ico")))
        
         self.slider_data.load()
+        
+        self.save_timer = QTimer()
+        self.save_timer.timeout.connect(lambda: (self.slider_data.save(should_notify=False), (self.slider_data.save_master(should_notify=False))))
+        self.save_timer.start(300000)
     
         self.serial_reader = SerialReader('COM4', callback=self.on_knob_update)
         
