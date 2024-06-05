@@ -74,6 +74,7 @@ class Ui_DynamicSliderContainer(object):
         font.setPointSize(10)
         self.dynamicSliderMuteButton.setFont(font)
         self.dynamicSliderMuteButton.setText("🔇")
+        self.dynamicSliderMuteButton.setCheckable(True)
         self.dynamicSliderMuteButton.setObjectName("dynamicSliderMuteButton")
         self.dynamicSliderTopButtonHorzLayout.addWidget(self.dynamicSliderMuteButton)
         self.dynamicSliderVertLayout.addLayout(self.dynamicSliderTopButtonHorzLayout)

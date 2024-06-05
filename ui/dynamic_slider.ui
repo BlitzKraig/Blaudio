@@ -203,6 +203,9 @@
          <property name="text">
           <string notr="true">🔇</string>
          </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
       </layout>

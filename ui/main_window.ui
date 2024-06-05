@@ -28,6 +28,9 @@
   <property name="styleSheet">
    <string notr="true"/>
   </property>
+  <property name="tabShape">
+   <enum>QTabWidget::Rounded</enum>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <property name="styleSheet">
     <string notr="true"/>
@@ -131,6 +134,15 @@
             <property name="text">
              <string notr="true">🔇</string>
             </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
+            </property>
            </widget>
           </item>
          </layout>
@@ -206,6 +218,12 @@
            <layout class="QHBoxLayout" name="dynamicSlidersHorzLayout">
             <property name="spacing">
              <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>6</number>
+            </property>
+            <property name="bottomMargin">
+             <number>6</number>
             </property>
             <item>
              <spacer name="dynamicSlidersSpacer">
@@ -300,6 +318,11 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionTest">
+   <property name="text">
+    <string>Test</string>
    </property>
   </action>
  </widget>

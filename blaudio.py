@@ -80,7 +80,7 @@ class MyWindow(QMainWindow):
         self.slider_object_to_volume_slider[self.master_slider.slider_object] = self.master_slider
         
         if(self.master_slider.slider_object.mute):
-            ui.masterSliderMuteButton.setText("🔊")
+            ui.masterSliderMuteButton.setChecked(True)
             
         ui.masterSliderMuteButton.clicked.connect(lambda active: self.toggle_mute(self.master_slider.slider_object))
         
@@ -189,7 +189,7 @@ class MyWindow(QMainWindow):
         
         slider_container.dynamicSliderMuteButton.clicked.connect(lambda active, apps=slider_object.app_names: self.toggle_mute(slider_container.slider_object))
         if slider_object.mute:
-            slider_container.dynamicSliderMuteButton.setText("🔊")
+            slider_container.dynamicSliderMuteButton.setChecked(True)
         
         self.slider_object_to_volume_slider[slider_object] = slider_container.dynamicSliderVolSlider
         
@@ -246,10 +246,6 @@ class MyWindow(QMainWindow):
         
     def toggle_mute(self, slider_object):
         slider_object.mute = not slider_object.mute
-        if slider_object.mute:
-            self.sender().setText("🔊")
-        else:
-            self.sender().setText("🔇")
         if 'Blaudio: Master Volume' in slider_object.app_names:
             devices = AudioUtilities.GetSpeakers()
             interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
