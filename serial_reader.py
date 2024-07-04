@@ -39,14 +39,14 @@ class SerialReader:
         if self.is_connected:
             self.send_heartbeat()
             return
-        print("Trying to connect to the serial port...")
+        print("Trying to connect to {}".format(self.port))
         try:
             self.ser = serial.Serial(self.port, self.baudrate)
             self.thread = threading.Thread(target=self.read_from_port)
             self.thread.daemon = True
             self.thread.start()
             # self.timer.stop()  # Stop the timer once connected ~ Not stopping, as we're using this to keep us connected now
-            print("Connected to the serial port")
+            print("Connected to {}".format(self.port))
             self.is_connected = True
         except serial.SerialException:
             print("Failed to connect to the serial port. Retrying in {} seconds...".format(self.retry_interval))
@@ -58,6 +58,9 @@ class SerialReader:
             try:
                 if self.ser.in_waiting > 0:
                     line = self.ser.readline().decode('utf-8').strip()
+                    
+                    # TODO: Temp workaround to ignore buttons
+                    line = line.split('KNOB')[1]
                     values = line.split('|')
                     for i, value in enumerate(values):
                         if i not in self.knob_buffers:
