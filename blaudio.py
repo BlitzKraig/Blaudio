@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import json
 from ui.main_window import Ui_MainWindow
 from ui.dynamic_slider import Ui_DynamicSliderContainer
 from comtypes import CLSCTX_ALL
@@ -31,6 +32,10 @@ class MyWindow(QMainWindow):
             base_path = os.path.dirname(__file__)
             start_hidden = False
             
+        with open('config.json') as f:
+            config = json.load(f)
+
+            
         self.slider_data = SliderData(self)
         
         self.sliders = []
@@ -47,8 +52,7 @@ class MyWindow(QMainWindow):
         self.save_timer = QTimer()
         self.save_timer.timeout.connect(lambda: (self.slider_data.save(should_notify=False), (self.slider_data.save_master(should_notify=False))))
         self.save_timer.start(300000)
-    
-        self.serial_reader = SerialReader('COM4', callback=self.on_knob_update)
+        self.serial_reader = SerialReader(config['COM_PORT'], callback=self.on_knob_update)
         
     def closeEvent(self, event):
         event.ignore()
