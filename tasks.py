@@ -17,5 +17,7 @@ def buildUI(c):
     
 @task
 def buildEXE(c):
-    c.run("pyinstaller blaudio.spec")
+    # Force full rebuild
+    c.run("pyinstaller blaudio.spec --clean")
+    c.run("cp blaudio_config.json dist/")
     
