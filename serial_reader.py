@@ -41,6 +41,11 @@ class SerialReader:
             return
         print("Trying to connect to {}".format(self.port))
         try:
+            # Try to close the serial port
+            try:
+                self.ser.close()
+            except:
+                pass
             self.ser = serial.Serial(self.port, self.baudrate)
             self.thread = threading.Thread(target=self.read_from_port)
             self.thread.daemon = True
@@ -60,15 +65,18 @@ class SerialReader:
                     line = self.ser.readline().decode('utf-8').strip()
                     
                     # TODO: Temp workaround to ignore buttons
-                    line = line.split('KNOB')[1]
-                    values = line.split('|')
-                    for i, value in enumerate(values):
-                        if i not in self.knob_buffers:
-                            self.knob_buffers[i] = deque(maxlen=self.smoothing_window)
-                        self.knob_buffers[i].append(int(value))
-                        old_avg = np.mean(self.knob_buffers[i])
-                        new_avg = (old_avg - self.old_min) / (self.old_max - self.old_min) * (self.new_max - self.new_min) + self.new_min
-                        self.knobs[i] = int(np.rint(new_avg))  # round the average to the nearest integer
+                    try:
+                        line = line.split('KNOB')[1]
+                        values = line.split('|')
+                        for i, value in enumerate(values):
+                            if i not in self.knob_buffers:
+                                self.knob_buffers[i] = deque(maxlen=self.smoothing_window)
+                            self.knob_buffers[i].append(int(value))
+                            old_avg = np.mean(self.knob_buffers[i])
+                            new_avg = (old_avg - self.old_min) / (self.old_max - self.old_min) * (self.new_max - self.new_min) + self.new_min
+                            self.knobs[i] = int(np.rint(new_avg))  # round the average to the nearest integer
+                    except IndexError:
+                        pass
                     
                     current_time = time.time()
                     if current_time - self.last_callback_time > self.callback_interval:
@@ -76,5 +84,9 @@ class SerialReader:
                         self.last_callback_time = current_time
             except serial.SerialException:
                 print("SerialException occurred. Stopping reader.")
+                self.is_connected = False
+                break
+            except Exception as e:
+                print("An error occurred: {}".format(e))
                 self.is_connected = False
                 break
