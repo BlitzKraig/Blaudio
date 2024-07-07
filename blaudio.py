@@ -33,7 +33,7 @@ class MyWindow(QMainWindow):
             start_hidden = False
             
         with open('config.json') as f:
-            config = json.load(f)
+            self.config = json.load(f)
 
             
         self.slider_data = SliderData(self)
@@ -52,7 +52,7 @@ class MyWindow(QMainWindow):
         self.save_timer = QTimer()
         self.save_timer.timeout.connect(lambda: (self.slider_data.save(should_notify=False), (self.slider_data.save_master(should_notify=False))))
         self.save_timer.start(300000)
-        self.serial_reader = SerialReader(config['COM_PORT'], callback=self.on_knob_update)
+        self.serial_reader = SerialReader(self.config['COM_PORT'], callback=self.on_knob_update)
         
     def closeEvent(self, event):
         event.ignore()
@@ -77,7 +77,7 @@ class MyWindow(QMainWindow):
         self.master_slider = ui.masterSliderVolSlider
         
         loaded_master = self.slider_data.load_master()
-        self.master_slider.slider_object = loaded_master if loaded_master else Slider('Master Volume', ['Blaudio: Master Volume'], 50, knob_index=0)
+        self.master_slider.slider_object = loaded_master if loaded_master else Slider('Master Volume', ['Blaudio: Master Volume'], 50, knob_index=self.config["MASTER_KNOB_INDEX"])
         self.master_slider.setValue(self.master_slider.slider_object.volume)
         self.master_slider.valueChanged.connect(lambda value: self.change_volume(value, self.master_slider.slider_object))
             
