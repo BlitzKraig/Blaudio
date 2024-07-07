@@ -27,12 +27,14 @@ class MyWindow(QMainWindow):
             # We're running in a PyInstaller bundle
             base_path = sys._MEIPASS
             start_hidden = True
+            application_path = os.path.dirname(sys.executable)
         else:
             # We're running in a normal Python environment
             base_path = os.path.dirname(__file__)
             start_hidden = False
+            application_path = os.path.dirname(os.path.abspath(__file__))
             
-        with open('config.json') as f:
+        with open(os.path.join(application_path, 'blaudio_config.json')) as f:
             self.config = json.load(f)
 
             
