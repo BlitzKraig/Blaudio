@@ -1,9 +1,7 @@
-#include <avr/wdt.h>
-
 const int KNOB_COUNT = 5;
 const int analogInputs[KNOB_COUNT] = {A0,A1,A2,A3,A4};
-const int BUTTON_COUNT = 6;
-const int digitalInputs[BUTTON_COUNT]= {2,3,4,5,6,7};
+const int BUTTON_COUNT = 1;
+const int digitalInputs[BUTTON_COUNT]= {2};
 
 int knobValues[KNOB_COUNT];
 int buttonValues[BUTTON_COUNT];
@@ -27,7 +25,7 @@ void setup()
     pinMode(digitalInputs[i], INPUT_PULLUP);
   }
 
-  // analogReadResolution(10);
+  analogReadResolution(10);
 
   Serial.begin(9600);
 }
@@ -55,10 +53,11 @@ void checkHeartbeat()
   // Check if the heartbeat timeout has been exceeded
   if (millis() - lastHeartbeatTime > heartbeatTimeout)
   {
-    Serial.end();
-    delay(100);
-    Serial.begin(9600);
-    lastHeartbeatTime = millis();
+    // Serial.end();
+    // delay(100);
+    // Serial.begin(9600);
+    // lastHeartbeatTime = millis();
+    ESP.restart();
   }
 }
 
