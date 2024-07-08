@@ -1,4 +1,5 @@
 {
-    "COM_PORT": "COM4",
-    "MASTER_KNOB_INDEX": 0
+    "COM_PORT": "COM6",
+    "MASTER_KNOB_INDEX": 0,
+    "BAUD_RATE": 115200
 }

@@ -54,7 +54,7 @@ class MyWindow(QMainWindow):
         self.save_timer = QTimer()
         self.save_timer.timeout.connect(lambda: (self.slider_data.save(should_notify=False), (self.slider_data.save_master(should_notify=False))))
         self.save_timer.start(300000)
-        self.serial_reader = SerialReader(self.config['COM_PORT'], callback=self.on_knob_update)
+        self.serial_reader = SerialReader(self.config['COM_PORT'], baudrate=self.config['BAUD_RATE'], callback=self.on_knob_update)
         
     def closeEvent(self, event):
         event.ignore()

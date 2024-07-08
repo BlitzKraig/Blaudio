@@ -1,7 +1,5 @@
-#include <avr/wdt.h>
-
 const int KNOB_COUNT = 5;
-const int analogInputs[KNOB_COUNT] = {A0,A1,A2,A3,A4};
+const int analogInputs[KNOB_COUNT] = {A5,A1,A2,A3,A4};
 const int BUTTON_COUNT = 6;
 const int digitalInputs[BUTTON_COUNT]= {2,3,4,5,6,7};
 
@@ -12,6 +10,8 @@ int buttonValues[BUTTON_COUNT];
 const String heartbeatMessage = "BLAUDIO_HEARTBEAT";
 unsigned long lastHeartbeatTime = 0;
 const unsigned long heartbeatTimeout = 15000; // 15 seconds
+
+const long baudrate = 115200;
 
 String serialString = "";
 
@@ -29,7 +29,7 @@ void setup()
 
   // analogReadResolution(10);
 
-  Serial.begin(9600);
+  Serial.begin(baudrate);
 }
 
 void loop()
@@ -57,7 +57,7 @@ void checkHeartbeat()
   {
     Serial.end();
     delay(100);
-    Serial.begin(9600);
+    Serial.begin(baudrate);
     lastHeartbeatTime = millis();
   }
 }
