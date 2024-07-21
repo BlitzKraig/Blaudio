@@ -14,6 +14,7 @@ class SerialReader:
         self.retry_interval = retry_interval
         self.callback = callback
         self.callback_interval = callback_interval
+        self.buttons = {}
         self.knobs = {}
         self.knob_buffers = {}
         self.smoothing_window = smoothing_window
@@ -66,21 +67,26 @@ class SerialReader:
                     
                     # TODO: Temp workaround to ignore buttons
                     try:
-                        line = line.split('KNOB')[1]
-                        values = line.split('|')
-                        for i, value in enumerate(values):
+                        knob_line = line.split('KNOB')[1]
+                        knob_values = knob_line.split('|')
+                        for i, value in enumerate(knob_values):
                             if i not in self.knob_buffers:
                                 self.knob_buffers[i] = deque(maxlen=self.smoothing_window)
                             self.knob_buffers[i].append(int(value))
                             old_avg = np.mean(self.knob_buffers[i])
                             new_avg = (old_avg - self.old_min) / (self.old_max - self.old_min) * (self.new_max - self.new_min) + self.new_min
                             self.knobs[i] = int(np.rint(new_avg))  # round the average to the nearest integer
+                            
+                        button_line = line.split('KNOB')[0].strip("BUTTON")
+                        button_values = button_line.split('|')
+                        for i, value in enumerate(button_values):
+                            self.buttons[i] = int(value)
                     except IndexError:
                         pass
                     
                     current_time = time.time()
                     if current_time - self.last_callback_time > self.callback_interval:
-                        self.callback(self.knobs)
+                        self.callback(self.knobs, self.buttons)
                         self.last_callback_time = current_time
             except serial.SerialException:
                 print("SerialException occurred. Stopping reader.")

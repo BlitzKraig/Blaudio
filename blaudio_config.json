@@ -1,5 +1,7 @@
 {
     "COM_PORT": "COM6",
     "MASTER_KNOB_INDEX": 0,
+    "MUTE_BUTTON_INDEX": 0,
+    "SHOW_HIDE_BUTTON_INDEX": 3,
     "BAUD_RATE": 115200
 }

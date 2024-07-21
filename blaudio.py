@@ -51,10 +51,17 @@ class MyWindow(QMainWindow):
        
         self.slider_data.load()
         
+        self.last_button_values = {}
+        self.button_values = {}
+        
         self.save_timer = QTimer()
         self.save_timer.timeout.connect(lambda: (self.slider_data.save(should_notify=False), (self.slider_data.save_master(should_notify=False))))
         self.save_timer.start(300000)
-        self.serial_reader = SerialReader(self.config['COM_PORT'], baudrate=self.config['BAUD_RATE'], callback=self.on_knob_update)
+        self.serial_reader = SerialReader(self.config['COM_PORT'], baudrate=self.config['BAUD_RATE'], callback=self.on_serial_update)
+        
+        self.notification_fade_out_timer = QTimer()
+        self.notification_fade_out_timer.setSingleShot(True)
+        self.notification_fade_out_timer.timeout.connect(self.start_fade_out_animation)
         
     def closeEvent(self, event):
         event.ignore()
@@ -108,7 +115,7 @@ class MyWindow(QMainWindow):
         if not start_hidden:
             self.show()
         
-    def on_knob_update(self, knobs):
+    def on_serial_update(self, knobs, buttons):
         # TODO: Improve the performance of this, it's messy
         # Iterate through the knobs
         for knob_index, knob_value in knobs.items():
@@ -120,6 +127,20 @@ class MyWindow(QMainWindow):
                     self.slider_object_to_volume_slider[slider].setValue(knob_value)
             if self.master_slider.slider_object.knob_index == knob_index:
                 self.master_slider.setValue(knob_value)
+                
+        for button_index, button_value in buttons.items():
+            if button_value == 0 and self.last_button_values.get(button_index, 1) == 1:
+                if button_index == self.config['MUTE_BUTTON_INDEX']:
+                    self.toggle_mute(self.master_slider.slider_object)
+                elif button_index == self.config['SHOW_HIDE_BUTTON_INDEX']:
+                    if self.isVisible():
+                        QTimer.singleShot(0, self.hide)
+                    else:
+                        QTimer.singleShot(0, self.show)
+                # elif button_index == 1:
+                #     self.open_windows_volume_mixer()
+                self.show_notification("Button {} pressed".format(button_index))
+            self.last_button_values[button_index] = button_value
         
     def create_slider(self):
         # Create a dialog
@@ -232,16 +253,22 @@ class MyWindow(QMainWindow):
             self.toast_label.setText(message)
             self.toast_label.show()
 
-            # Create an animation to fade in the toast label
-            self.fade_in_animation = QPropertyAnimation(self.toast_label_opacity_effect, b"opacity")
-            self.fade_in_animation.setDuration(300)
-            self.fade_in_animation.setStartValue(0)
-            self.fade_in_animation.setEndValue(1)
-            self.fade_in_animation.start()
-
+            # Hacky way to fix threading issues
+            QTimer.singleShot(0, self.start_fade_in_animation)
             # Use a QTimer to start the fade out animation after the given duration
             QTimer.singleShot(2000, self.start_fade_out_animation)
+            # self.notification_fade_out_timer.start(2000)
+            # QTimer.singleShot(0, lambda: self.notification_fade_out_timer.start(2000))
         
+    def start_fade_in_animation(self):
+        if self.notification_fade_out_timer.isActive:
+            self.notification_fade_out_timer.stop()
+        self.fade_in_animation = QPropertyAnimation(self.toast_label_opacity_effect, b"opacity")
+        self.fade_in_animation.setDuration(300)
+        self.fade_in_animation.setStartValue(0)
+        self.fade_in_animation.setEndValue(1)
+        self.fade_in_animation.start()
+            
     def start_fade_out_animation(self):
         # Create an animation to fade out the toast label
         self.fade_out_animation = QPropertyAnimation(self.toast_label_opacity_effect, b"opacity")
