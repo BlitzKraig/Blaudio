@@ -1,6 +1,8 @@
 # Blaudio
 Grouped Windows audio control with custom hardware support
 
+This is the first thing I've ever built with Python - the structure is not ideal. Improvements welcome.
+
 ## Description
 Inspired by Deej, Blaudio is designed to work with custom Arduino hardware.
 
