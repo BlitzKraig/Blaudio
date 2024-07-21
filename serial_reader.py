@@ -5,14 +5,17 @@ from collections import deque
 import numpy as np
 from PyQt6.QtCore import QTimer
 
+MINIMUM_HARDWARE_VERSION = 1
+
 class SerialReader:
-    def __init__(self, port, callback, baudrate=9600, callback_interval=0.02, smoothing_window=10, old_range=(0, 1023), new_range=(0, 100), retry_interval=5):
+    def __init__(self, port, callback, message_callback, baudrate=9600, callback_interval=0.02, smoothing_window=10, old_range=(0, 1023), new_range=(0, 100), retry_interval=5):
         self.old_min, self.old_max = old_range
         self.new_min, self.new_max = new_range
         self.port = port
         self.baudrate = baudrate
         self.retry_interval = retry_interval
         self.callback = callback
+        self.message_callback = message_callback
         self.callback_interval = callback_interval
         self.buttons = {}
         self.knobs = {}
@@ -64,10 +67,17 @@ class SerialReader:
             try:
                 if self.ser.in_waiting > 0:
                     line = self.ser.readline().decode('utf-8').strip()
-                    
-                    # TODO: Temp workaround to ignore buttons
+                    # Example line: VER1#BUTTON1|2|3#KNOB1|2#
                     try:
-                        knob_line = line.split('KNOB')[1]
+                        version_line = int(line.split('VER')[1].split('#')[0])
+                        if(version_line < MINIMUM_HARDWARE_VERSION):
+                            message = "Incompatible HW. Current: {}. Required: {}.".format(version_line, MINIMUM_HARDWARE_VERSION)
+                            print(message)
+                            self.message_callback(message)
+                            self.is_connected = False
+                            break
+                        
+                        knob_line = line.split('KNOB')[1].split('#')[0]
                         knob_values = knob_line.split('|')
                         for i, value in enumerate(knob_values):
                             if i not in self.knob_buffers:
@@ -77,11 +87,13 @@ class SerialReader:
                             new_avg = (old_avg - self.old_min) / (self.old_max - self.old_min) * (self.new_max - self.new_min) + self.new_min
                             self.knobs[i] = int(np.rint(new_avg))  # round the average to the nearest integer
                             
-                        button_line = line.split('KNOB')[0].strip("BUTTON")
+                        button_line = line.split('BTN')[1].split("#")[0]
                         button_values = button_line.split('|')
                         for i, value in enumerate(button_values):
                             self.buttons[i] = int(value)
-                    except IndexError:
+                    except IndexError as e:
+                        print("IndexError occurred. Skipping line.")
+                        print(e)
                         pass
                     
                     current_time = time.time()

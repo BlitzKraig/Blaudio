@@ -1,7 +1,8 @@
 const int KNOB_COUNT = 5;
-const int analogInputs[KNOB_COUNT] = {A5,A1,A2,A3,A4};
+const int analogInputs[KNOB_COUNT] = {A5, A1, A2, A3, A4};
 const int BUTTON_COUNT = 6;
-const int digitalInputs[BUTTON_COUNT]= {7,6,5,4,3,2};
+const int digitalInputs[BUTTON_COUNT] = {7, 6, 5, 4, 3, 2};
+const int version = 1;
 
 int knobValues[KNOB_COUNT];
 int buttonValues[BUTTON_COUNT];
@@ -21,7 +22,7 @@ void setup()
   {
     pinMode(analogInputs[i], INPUT);
   }
-  
+
   for (int i = 0; i < BUTTON_COUNT; i++)
   {
     pinMode(digitalInputs[i], INPUT_PULLUP);
@@ -80,31 +81,42 @@ void checkKnobValues()
 
 void pushSerial()
 {
-  serialString = String("");
-  if(BUTTON_COUNT > 0)
+  serialString = String("VER") + version + String("#");
+
+  if (BUTTON_COUNT > 0)
   {
     serialString += String("BTN");
-  }
-  for (int i = 0; i < BUTTON_COUNT; i++)
-  {
-    serialString += buttonValues[i];
-    if (i < BUTTON_COUNT - 1)
+
+    for (int i = 0; i < BUTTON_COUNT; i++)
     {
-      serialString += String("|");
-    }
-  }
-  if(KNOB_COUNT > 0)
-  {
-    serialString += String("KNOB");
-  }
-  for (int i = 0; i < KNOB_COUNT; i++)
-  {
-    serialString += knobValues[i];
-    if (i < KNOB_COUNT - 1)
-    {
-      serialString += String("|");
+      serialString += buttonValues[i];
+      if (i < BUTTON_COUNT - 1)
+      {
+        serialString += String("|");
+      }
+      else
+      {
+        serialString += String("#");
+      }
     }
   }
   
+  if (KNOB_COUNT > 0)
+  {
+    serialString += String("KNOB");
+    for (int i = 0; i < KNOB_COUNT; i++)
+    {
+      serialString += knobValues[i];
+      if (i < KNOB_COUNT - 1)
+      {
+        serialString += String("|");
+      }
+      else
+      {
+        serialString += String("#");
+      }
+    }
+  }
+
   Serial.println(serialString);
 }

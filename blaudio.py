@@ -57,7 +57,7 @@ class MyWindow(QMainWindow):
         self.save_timer = QTimer()
         self.save_timer.timeout.connect(lambda: (self.slider_data.save(should_notify=False), (self.slider_data.save_master(should_notify=False))))
         self.save_timer.start(300000)
-        self.serial_reader = SerialReader(self.config['COM_PORT'], baudrate=self.config['BAUD_RATE'], callback=self.on_serial_update)
+        self.serial_reader = SerialReader(self.config['COM_PORT'], baudrate=self.config['BAUD_RATE'], callback=self.on_serial_update, message_callback=self.on_message)
         
         self.notification_fade_out_timer = QTimer()
         self.notification_fade_out_timer.setSingleShot(True)
@@ -141,6 +141,9 @@ class MyWindow(QMainWindow):
                 #     self.open_windows_volume_mixer()
                 self.show_notification("Button {} pressed".format(button_index))
             self.last_button_values[button_index] = button_value
+            
+    def on_message(self, message):
+        self.show_notification(message)
         
     def create_slider(self):
         # Create a dialog
