@@ -1,3 +1,5 @@
+// OUTDATED!!! ========================
+
 const int KNOB_COUNT = 5;
 const int analogInputs[KNOB_COUNT] = {A0,A1,A2,A3,A4};
 const int BUTTON_COUNT = 1;
