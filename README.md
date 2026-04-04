@@ -90,12 +90,13 @@ VER{version}#BTN{b0}|{b1}|{b2}|{b3}|{b4}|{b5}#KNOB{k0}|{k1}|{k2}|{k3}|{k4}#
 ```
 
 Example:
+
 ```
 VER1#BTN0|1|0|1|0|1#KNOB512|712|923|100|234#
 ```
 
 | Field | Description |
-|-------|-------------|
+| -------- | ------------- |
 | `VER` | Protocol version (must be >= 1) |
 | `BTN` | Button states separated by `\|` (0 = pressed, 1 = released; buttons use INPUT_PULLUP) |
 | `KNOB` | Raw analog values 0-1023, separated by `\|` |
@@ -109,7 +110,7 @@ Knob values are smoothed on the PC side using a rolling average over 10 samples 
 ### Arduino Nano (Config.h)
 
 | Component | Pin | Index |
-|-----------|-----|-------|
+| --------- | --- | ----- |
 | Knob 0 | A0 | Mapped to Master Volume by default |
 | Knob 1 | A1 | Assignable to any slider |
 | Knob 2 | A2 | Assignable to any slider |
@@ -137,6 +138,7 @@ Knob values are smoothed on the PC side using a rolling average over 10 samples 
 ## Dependencies
 
 **Python packages:**
+
 - **pywebview** - Embeds a WebView2 (Edge Chromium) window; exposes `Api` class to JS
 - **pystray** - System tray icon (pure Python, no Qt required)
 - **Pillow** - Icon image loading for pystray
@@ -146,6 +148,7 @@ Knob values are smoothed on the PC side using a rolling average over 10 samples 
 - **numpy** - Knob value smoothing (rolling average)
 
 **Build tools:**
+
 - **PyInstaller** - Standalone exe packaging
 - **invoke** - Task runner (`invoke start`, `invoke buildEXE`)
 
@@ -160,18 +163,22 @@ Knob values are smoothed on the PC side using a rolling average over 10 samples 
 You may need to whitelist the exe in Windows Defender since it's bundled with PyInstaller.
 
 To start Blaudio on login, create a shortcut in:
+
 ```
 %APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup
 ```
+
 (Type `shell:startup` in Run dialog - Win+R)
 
 ### For developers
 
 1. Clone the repo
 2. Create and activate a virtual environment, then install dependencies:
+
    ```
    pip install pywebview pystray Pillow pycaw pyserial comtypes numpy invoke pyinstaller
    ```
+
 3. Use invoke tasks:
    - `invoke start` - Run the app
    - `invoke buildEXE` - Build standalone exe with PyInstaller
@@ -181,12 +188,14 @@ To start Blaudio on login, create a shortcut in:
 1. Open `Arduino/Nano/BlaudioNano/Config.h`
 2. Update `KNOB_COUNT`, `analogInputs`, `BUTTON_COUNT`, and `digitalInputs` to match your wiring
 3. A typical setup:
+
    ```cpp
    const int KNOB_COUNT = 5;
    const int analogInputs[KNOB_COUNT] = {A0, A1, A2, A3, A4};
    const int BUTTON_COUNT = 6;
    const int digitalInputs[BUTTON_COUNT] = {2, 3, 4, 5, 6, 7};
    ```
+
 4. Open `Arduino/Nano/BlaudioNano/BlaudioNano.ino` in the Arduino IDE
 5. Select your board, connect it, and click Upload
 6. Verify with the Serial Monitor (close it before running Blaudio)
@@ -201,7 +210,7 @@ The UI lives entirely in `ui/web/` — plain HTML, CSS, and vanilla JavaScript. 
 ### Files
 
 | File | Purpose |
-|------|---------|
+| ---- | ------- |
 | `ui/web/index.html` | HTML shell: menubar, master panel, slider area, add-slider dialog, toast |
 | `ui/web/style.css` | Dark theme using CSS custom properties (design tokens) |
 | `ui/web/app.js` | All UI logic in the `window.blaudio` namespace |
@@ -246,6 +255,7 @@ All design tokens are defined as CSS variables at the top of `style.css`. Change
 `Api` (in `api.py`) is a plain Python class registered as pywebview's `js_api`. Every public method on `Api` becomes callable from JS as `await window.pywebview.api.method_name(args)`.
 
 **JS → Python (user actions):**
+
 ```javascript
 // Call a Python method and await its return value
 const state = await window.pywebview.api.get_initial_state()
@@ -254,6 +264,7 @@ const muted = await window.pywebview.api.toggle_master_mute()
 ```
 
 **Python → JS (hardware updates):**
+
 ```python
 # api.py — push a real-time event to the frontend
 self._push('master_volume', {'volume': knob_value})
@@ -285,6 +296,7 @@ The `ui/web/` directory is self-contained. To replace the UI with a different fr
 ## How It Works
 
 ### Startup
+
 1. Loads config from `blaudio_config.json`
 2. Restores saved slider assignments from `slider_data.json` and `master_slider_data.json`
 3. Creates a pywebview window pointing at `ui/web/index.html`, registering `Api` as `js_api`
@@ -293,6 +305,7 @@ The `ui/web/` directory is self-contained. To replace the UI with a different fr
 6. Starts auto-save timer (every 5 minutes)
 
 ### Runtime
+
 - Arduino sends knob/button data every 10ms
 - `serial_reader.py` parses the protocol and smooths knob values
 - Knob changes call `api._push()` to update the JS frontend in real time
@@ -301,6 +314,7 @@ The `ui/web/` directory is self-contained. To replace the UI with a different fr
 - Configuration is auto-saved periodically and on quit
 
 ### Adding a slider
+
 1. Click "Add Slider" in the toolbar
 2. Enter a name for the slider
 3. Select running applications from the checklist (or choose "All Unassigned")
@@ -312,6 +326,7 @@ The `ui/web/` directory is self-contained. To replace the UI with a different fr
 **Version:** 0.0.7 (early development)
 
 **Known limitations:**
+
 - Edit slider functionality is not yet implemented (button exists but shows a toast)
 - Settings menu is present but does nothing
 - Some button indices are unassigned (show a notification when pressed)
