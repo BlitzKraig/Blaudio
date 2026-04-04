@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blaudio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Menu bar ─────────────────────────────────────────────── -->
+  <nav id="menubar">
+    <div class="menu-entry">
+      <span>Options</span>
+      <div class="menu-drop">
+        <button class="menu-action" disabled>Settings</button>
+        <div class="menu-sep"></div>
+        <button class="menu-action" onclick="blaudio.quit()">Quit</button>
+      </div>
+    </div>
+    <div class="menu-entry">
+      <span>Help</span>
+      <div class="menu-drop">
+        <button class="menu-action" onclick="blaudio.about()">About</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Mixer ────────────────────────────────────────────────── -->
+  <main id="mixer">
+
+    <!-- Master slider -->
+    <div id="master-panel">
+      <span class="slider-label master-label">MASTER</span>
+      <div class="slider-wrapper">
+        <input id="master-slider" type="range" class="vslider"
+               min="0" max="100" value="50"
+               oninput="blaudio.setMasterVolume(this.value)">
+      </div>
+      <div class="slider-controls">
+        <button id="master-mute-btn" class="icon-btn mute-btn"
+                title="Mute" onclick="blaudio.toggleMasterMute()">🔇</button>
+      </div>
+    </div>
+
+    <div class="panel-divider"></div>
+
+    <!-- Dynamic sliders -->
+    <section id="sliders-section">
+      <div id="sliders-scroll">
+        <div id="sliders-container">
+          <!-- populated by app.js -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Toolbar ──────────────────────────────────────────────── -->
+  <footer id="toolbar">
+    <button class="btn-flat" onclick="blaudio.openMixer()">Open Windows Mixer</button>
+    <span class="spacer"></span>
+    <button class="btn-accent" onclick="blaudio.openAddSliderDialog()">+ Add Slider</button>
+  </footer>
+
+</div>
+
+<!-- ── Toast ────────────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<!-- ── Add Slider dialog ─────────────────────────────────────── -->
+<div id="overlay" class="hidden" onclick="blaudio.closeModal(event)">
+  <div id="dialog">
+    <h3>Add Slider</h3>
+
+    <label>Name</label>
+    <input id="slider-name" class="dialog-input" type="text" placeholder="e.g. Gaming">
+
+    <label>Applications</label>
+    <div id="app-list"></div>
+
+    <label>Hardware knob</label>
+    <select id="knob-select" class="dialog-select">
+      <option value="-1">None</option>
+      <option value="0">0</option><option value="1">1</option>
+      <option value="2">2</option><option value="3">3</option>
+      <option value="4">4</option><option value="5">5</option>
+      <option value="6">6</option><option value="7">7</option>
+      <option value="8">8</option>
+    </select>
+
+    <div class="dialog-actions">
+      <button class="btn-flat" onclick="blaudio.closeModal()">Cancel</button>
+      <button class="btn-accent" onclick="blaudio.confirmAddSlider()">Add</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -36,36 +36,39 @@ Arduino Nano (USB Serial)          Windows PC
                                           |
                                           v
                                   +---------------------------+
-                                  | blaudio.py (MyWindow)     |
-                                  |   PyQt6 GUI               |
+                                  | api.py  (Api class)       |
                                   |   pycaw audio control     |
                                   |   Slider management       |
+                                  |   JS ↔ Python bridge      |
                                   +---------------------------+
-                                          |
-                                          v
-                                  +---------------------------+
-                                  | tray_icon.py              |
-                                  |   System tray integration |
-                                  +---------------------------+
+                                       |          |
+                              +--------+          +----------+
+                              v                              v
+                    +------------------+         +------------------+
+                    | ui/web/          |         | tray.py          |
+                    |   HTML/CSS/JS    |         |   pystray tray   |
+                    |   pywebview      |         +------------------+
+                    +------------------+
 ```
 
 ## Project Structure
 
 ```
-blaudio.py              Main app entry point and window (PyQt6 QMainWindow)
+blaudio.py              App entry point — creates pywebview window, wires tray and serial
+api.py                  Public API class exposed to JS via pywebview's js_api
 serial_reader.py        Serial communication with Arduino, protocol parsing, value smoothing
 slider.py               Slider data model (name, apps, volume, knob index, mute state)
-slider_data.py          Persistence layer - saves/loads slider config via pickle
-tray_icon.py            System tray icon with show/hide/quit menu
+slider_data.py          Persistence layer - saves/loads slider config as JSON
+tray.py                 System tray icon (pystray) with show/hide/quit menu
 blaudio_config.json     Runtime config (COM port, button/knob assignments, baud rate)
 blaudio.spec            PyInstaller build spec for creating standalone exe
-tasks.py                Invoke tasks (start, buildUI, buildEXE)
+tasks.py                Invoke tasks (start, buildEXE)
 version.txt             Version info for PyInstaller (currently v0.0.7)
 
-ui/
-  main_window.py        Generated PyQt6 main window UI
-  dynamic_slider.py     Generated PyQt6 slider widget UI
-  uipreview.py          UI preview utility
+ui/web/
+  index.html            Main application window (HTML shell)
+  style.css             Dark theme with CSS custom properties (design tokens)
+  app.js                All UI logic — window.blaudio namespace, Python↔JS bridge
 
 resources/
   storm.ico             Application icon
@@ -134,16 +137,17 @@ Knob values are smoothed on the PC side using a rolling average over 10 samples 
 ## Dependencies
 
 **Python packages:**
-- **PyQt6** - GUI framework
+- **pywebview** - Embeds a WebView2 (Edge Chromium) window; exposes `Api` class to JS
+- **pystray** - System tray icon (pure Python, no Qt required)
+- **Pillow** - Icon image loading for pystray
 - **pycaw** - Windows Core Audio API (per-app volume control)
 - **pyserial** - Serial communication with Arduino
-- **plyer** - Desktop notifications
 - **comtypes** - COM interface access (used by pycaw)
 - **numpy** - Knob value smoothing (rolling average)
 
 **Build tools:**
 - **PyInstaller** - Standalone exe packaging
-- **invoke** - Task runner (`invoke start`, `invoke buildUI`, `invoke buildEXE`)
+- **invoke** - Task runner (`invoke start`, `invoke buildEXE`)
 
 ## Installation
 
@@ -164,10 +168,12 @@ To start Blaudio on login, create a shortcut in:
 ### For developers
 
 1. Clone the repo
-2. Install Python dependencies (PyQt6, pycaw, pyserial, plyer, comtypes, numpy)
+2. Create and activate a virtual environment, then install dependencies:
+   ```
+   pip install pywebview pystray Pillow pycaw pyserial comtypes numpy invoke pyinstaller
+   ```
 3. Use invoke tasks:
-   - `invoke start` - Rebuild UI and run the app
-   - `invoke buildUI` - Regenerate PyQt6 UI files from .ui sources
+   - `invoke start` - Run the app
    - `invoke buildEXE` - Build standalone exe with PyInstaller
 
 ### Hardware setup
@@ -188,26 +194,114 @@ To start Blaudio on login, create a shortcut in:
 
 **Note:** An Arduino Nano is recommended over an ESP32. The Nano gracefully re-establishes serial on heartbeat timeout, while the ESP32 does a full device restart.
 
+## UI Development
+
+The UI lives entirely in `ui/web/` — plain HTML, CSS, and vanilla JavaScript. No build step, no framework, no tooling required. You can open `ui/web/index.html` directly in any browser to work on the design.
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `ui/web/index.html` | HTML shell: menubar, master panel, slider area, add-slider dialog, toast |
+| `ui/web/style.css` | Dark theme using CSS custom properties (design tokens) |
+| `ui/web/app.js` | All UI logic in the `window.blaudio` namespace |
+
+### Browser-first development
+
+`app.js` includes a `MOCK_STATE` object at the top with sample sliders. When `index.html` is opened directly in a browser (without pywebview), the UI initialises from this mock data instead of calling Python. This means you can iterate on layout and styling entirely in your browser — no Python runtime needed.
+
+```javascript
+// app.js — edit this to change the design preview data
+const MOCK_STATE = {
+  version: 'v0.0.7',
+  masterVolume: 50,
+  masterMute: false,
+  sliders: [
+    { name: 'Chrome',  volume: 70, mute: false, knob_index: 1, app_names: ['chrome.exe'] },
+    ...
+  ],
+}
+```
+
+### Theming with CSS custom properties
+
+All design tokens are defined as CSS variables at the top of `style.css`. Change them in one place to retheme the whole app:
+
+```css
+:root {
+  --bg-primary:    #1a1a1a;   /* main window background */
+  --bg-secondary:  #222222;   /* panel/card background  */
+  --bg-tertiary:   #2a2a2a;   /* input/hover background */
+  --accent:        #9C27B0;   /* purple — buttons, sliders, focus rings */
+  --accent-hover:  #AB47BC;
+  --danger:        #e53935;   /* delete / muted state */
+  --text-primary:  #e0e0e0;
+  --text-muted:    #888888;
+  --border:        #333333;
+}
+```
+
+### How Python and JS communicate
+
+`Api` (in `api.py`) is a plain Python class registered as pywebview's `js_api`. Every public method on `Api` becomes callable from JS as `await window.pywebview.api.method_name(args)`.
+
+**JS → Python (user actions):**
+```javascript
+// Call a Python method and await its return value
+const state = await window.pywebview.api.get_initial_state()
+await window.pywebview.api.set_master_volume(75)
+const muted = await window.pywebview.api.toggle_master_mute()
+```
+
+**Python → JS (hardware updates):**
+```python
+# api.py — push a real-time event to the frontend
+self._push('master_volume', {'volume': knob_value})
+self._push('notification',  {'message': 'Button 0 pressed'})
+```
+
+```javascript
+// app.js — handle incoming events
+_receive(payload) {
+  const { event, data } = payload
+  switch (event) {
+    case 'master_volume': this._syncMasterSlider(data.volume); break
+    case 'notification':  this.showToast(data.message);        break
+  }
+}
+```
+
+To add a new Python-callable action: add a public method to `Api` in `api.py`.
+To push a new event type to JS: call `self._push('event_name', {...})` from Python and add a `case` to `_receive()` in `app.js`.
+
+### Swapping the UI framework
+
+The `ui/web/` directory is self-contained. To replace the UI with a different framework (React, Vue, Svelte, etc.):
+
+1. Build your new UI so it produces a static `index.html` (and any assets) in `ui/web/`
+2. Keep the `window.blaudio` namespace: `init(state)`, `_receive(payload)`, and the `window.pywebview.api.*` call sites
+3. The Python side (`api.py`) does not need to change
+
 ## How It Works
 
 ### Startup
 1. Loads config from `blaudio_config.json`
-2. Restores saved slider assignments from pickle files (`slider_data.pkl`, `master_slider_data.pkl`)
-3. Recreates UI with saved sliders
-4. Connects to Arduino via serial
-5. Creates system tray icon
+2. Restores saved slider assignments from `slider_data.json` and `master_slider_data.json`
+3. Creates a pywebview window pointing at `ui/web/index.html`, registering `Api` as `js_api`
+4. Connects to Arduino via serial (daemon thread)
+5. Creates system tray icon (pystray, daemon thread)
 6. Starts auto-save timer (every 5 minutes)
 
 ### Runtime
 - Arduino sends knob/button data every 10ms
 - `serial_reader.py` parses the protocol and smooths knob values
-- Knob changes update the corresponding slider in the UI
+- Knob changes call `api._push()` to update the JS frontend in real time
 - Slider changes are applied to Windows audio sessions via pycaw
 - Button presses trigger mute toggle, show/hide, or notifications
-- Configuration is auto-saved periodically and on window close
+- Configuration is auto-saved periodically and on quit
 
 ### Adding a slider
-1. Click "Add Slider" in the GUI
+1. Click "Add Slider" in the toolbar
 2. Enter a name for the slider
 3. Select running applications from the checklist (or choose "All Unassigned")
 4. Optionally assign a hardware knob (0-4)
@@ -218,8 +312,8 @@ To start Blaudio on login, create a shortcut in:
 **Version:** 0.0.7 (early development)
 
 **Known limitations:**
-- Edit slider functionality is not yet implemented (button exists but no handler)
-- Settings menu is present but disabled
+- Edit slider functionality is not yet implemented (button exists but shows a toast)
+- Settings menu is present but does nothing
 - Some button indices are unassigned (show a notification when pressed)
 
 ## License
