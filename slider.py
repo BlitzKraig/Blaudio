@@ -7,8 +7,20 @@ class Slider:
         self.mute = mute
 
     def serialize(self):
-        return self.name, self.app_names, self.volume, self.knob_index, self.mute
+        return {
+            'name': self.name,
+            'app_names': self.app_names,
+            'volume': self.volume,
+            'knob_index': self.knob_index,
+            'mute': self.mute,
+        }
 
     @classmethod
     def deserialize(cls, data):
-        return cls(*data)
+        return cls(
+            name=data['name'],
+            app_names=data['app_names'],
+            volume=data['volume'],
+            knob_index=data['knob_index'],
+            mute=data['mute'],
+        )
