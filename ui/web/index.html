@@ -94,6 +94,15 @@
       <option value="8">8</option>
     </select>
 
+    <label>Hardware mute button</label>
+    <div class="detect-row">
+      <span id="button-index-label" class="detect-label">None</span>
+      <button type="button" class="btn-flat detect-btn" id="button-detect-btn"
+              onclick="blaudio._startButtonDetection()">Detect</button>
+      <button type="button" class="btn-flat" id="button-clear-btn"
+              onclick="blaudio._clearButtonIndex()">Clear</button>
+    </div>
+
     <div class="dialog-actions">
       <button class="btn-flat" onclick="blaudio.closeModal()">Cancel</button>
       <button id="dialog-confirm-btn" class="btn-accent" onclick="blaudio.confirmSlider()">Add</button>

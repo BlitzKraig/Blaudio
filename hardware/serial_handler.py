@@ -18,10 +18,25 @@ class SerialHandler:
             config: The loaded blaudio_config.json dict.
             api:    The Api instance (used for state access and high-level actions).
         """
-        self._config             = config
-        self._api                = api
-        self._last_knob_values   = {}
-        self._last_button_values = {}
+        self._config              = config
+        self._api                 = api
+        self._last_knob_values    = {}
+        self._last_button_values  = {}
+        self._detection_callback  = None   # set while waiting for a button mapping press
+
+    # ── Detection mode ────────────────────────────────────────────────
+
+    def start_detection(self, callback):
+        """
+        Enter button-detection mode.  The next hardware button press will fire
+        callback(button_index) instead of being handled normally, and detection
+        mode will exit automatically.
+        """
+        self._detection_callback = callback
+
+    def cancel_detection(self):
+        """Cancel detection mode without firing the callback."""
+        self._detection_callback = None
 
     # ── SerialReader callbacks ────────────────────────────────────────
 
@@ -39,13 +54,11 @@ class SerialHandler:
             self._last_knob_values[knob_index] = knob_value
 
             if master_slider.knob_index == knob_index:
-                # Hardware moved the master knob
                 self._api._master_volume  = knob_value
                 master_slider.volume      = knob_value
                 self._api._audio.apply_master_volume(knob_value)
                 self._api._push('master_volume', {'volume': knob_value})
             else:
-                # Check whether any app slider is mapped to this knob
                 for i, slider in enumerate(sliders):
                     if slider.knob_index == knob_index:
                         slider.volume = knob_value
@@ -53,9 +66,20 @@ class SerialHandler:
                         self._api._push('slider_volume', {'index': i, 'volume': knob_value})
 
         for button_index, button_value in buttons.items():
-            # Detect falling edge (button pressed down)
+            # Detect falling edge (button pressed, given INPUT_PULLUP wiring).
             if button_value == 0 and self._last_button_values.get(button_index, 1) == 1:
-                if button_index == self._config['MUTE_BUTTON_INDEX']:
+                if self._detection_callback is not None:
+                    # Reject reserved buttons and keep listening.
+                    reserved = {self._config['MUTE_BUTTON_INDEX'], self._config['SHOW_HIDE_BUTTON_INDEX']}
+                    if button_index in reserved:
+                        self._api._push('notification', {
+                            'message': f'Button {button_index} is reserved. Press a different button.'
+                        })
+                    else:
+                        cb = self._detection_callback
+                        self._detection_callback = None
+                        cb(button_index)
+                elif button_index == self._config['MUTE_BUTTON_INDEX']:
                     muted = self._api.toggle_master_mute()
                     self._api._push('master_mute', {'mute': muted})
                 elif button_index == self._config['SHOW_HIDE_BUTTON_INDEX']:
@@ -63,7 +87,21 @@ class SerialHandler:
                         self._api.hide_window()
                     else:
                         self._api.show_window()
-                self._api._push('notification', {'message': f'Button {button_index} pressed'})
+                else:
+                    # Check if this button is assigned to a slider's mute.
+                    matched = False
+                    for i, slider in enumerate(sliders):
+                        if slider.button_index is not None and slider.button_index == button_index:
+                            slider.mute = not slider.mute
+                            self._api._audio.apply_slider_mute(slider, sliders)
+                            self._api._slider_data.save(should_notify=False)
+                            self._api._push('slider_mute', {'index': i, 'mute': slider.mute})
+                            matched = True
+                    if not matched:
+                        self._api._push('notification', {
+                            'message': f'Button {button_index} not mapped. Add or edit a slider to map this button.'
+                        })
+
             self._last_button_values[button_index] = button_value
 
     def on_message(self, message):

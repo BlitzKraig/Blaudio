@@ -71,12 +71,12 @@ class Api:
         self._save_timer = None
         self._schedule_save()
 
-        serial_handler = SerialHandler(self.config, self)
-        self._serial_reader = SerialReader(
+        self._serial_handler = SerialHandler(self.config, self)
+        self._serial_reader  = SerialReader(
             self.config['COM_PORT'],
             baudrate=self.config['BAUD_RATE'],
-            callback=serial_handler.on_serial_update,
-            message_callback=serial_handler.on_message,
+            callback=self._serial_handler.on_serial_update,
+            message_callback=self._serial_handler.on_message,
         )
 
     def set_window(self, window):
@@ -126,26 +126,39 @@ class Api:
         ensure_com()
         return self._audio.get_running_apps()
 
-    def create_slider(self, name, app_names, knob_index):
+    def create_slider(self, name, app_names, knob_index, button_index):
         if not name:
             return None
-        knob   = None if int(knob_index) < 0 else int(knob_index)
-        slider = Slider(name, list(app_names), 50, knob_index=knob)
+        knob   = None if int(knob_index)    < 0 else int(knob_index)
+        btn    = None if int(button_index)  < 0 else int(button_index)
+        slider = Slider(name, list(app_names), 50, knob_index=knob, button_index=btn)
         self.add_slider(slider)
         self._slider_data.save(should_notify=False)
         return slider.serialize()
 
-    def edit_slider(self, index, name, app_names, knob_index):
+    def edit_slider(self, index, name, app_names, knob_index, button_index):
         index = int(index)
         if not name or not (0 <= index < len(self._sliders)):
             return None
-        knob                        = None if int(knob_index) < 0 else int(knob_index)
-        slider                      = self._sliders[index]
-        slider.name                 = name
-        slider.app_names            = list(app_names)
-        slider.knob_index           = knob
+        knob                         = None if int(knob_index)   < 0 else int(knob_index)
+        btn                          = None if int(button_index) < 0 else int(button_index)
+        slider                       = self._sliders[index]
+        slider.name                  = name
+        slider.app_names             = list(app_names)
+        slider.knob_index            = knob
+        slider.button_index          = btn
         self._slider_data.save(should_notify=False)
         return slider.serialize()
+
+    def start_button_detection(self):
+        """Tell the serial handler to capture the next button press for mapping."""
+        self._serial_handler.start_detection(
+            lambda btn: self._push('button_detected', {'button_index': btn})
+        )
+
+    def cancel_button_detection(self):
+        """Abort an in-progress button detection (e.g. dialog closed)."""
+        self._serial_handler.cancel_detection()
 
     def reorder_sliders(self, order):
         order = [int(i) for i in order]

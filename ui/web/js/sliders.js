@@ -143,6 +143,18 @@ Object.assign(window.blaudio, {
     this._renderSliders()
   },
 
+  // Sync a slider's mute state from a hardware button press.
+  _syncSliderMute(index, mute) {
+    if (this.state.sliders[index]) this.state.sliders[index].mute = mute
+    const col = document.querySelector(`.slider-col[data-index="${index}"]`)
+    if (!col) return
+    col.classList.toggle('muted', mute)
+    const input = col.querySelector('.vslider')
+    if (input) input.disabled = mute
+    const btn = col.querySelector('.mute-btn')
+    if (btn) btn.classList.toggle('active', mute)
+  },
+
   // Sync a single slider's value from a Python hardware push event.
   _syncSliderValue(index, volume) {
     if (this.state.sliders[index]) this.state.sliders[index].volume = volume

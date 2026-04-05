@@ -7,11 +7,13 @@ Object.assign(window.blaudio, {
   _receive(payload) {
     const { event, data } = payload
     switch (event) {
-      case 'master_volume': this._syncMasterSlider(data.volume);             break
-      case 'master_mute':   this._syncMasterMute(data.mute);                break
-      case 'slider_volume': this._syncSliderValue(data.index, data.volume);  break
-      case 'notification':  this.showToast(data.message);                   break
-      case 'peak_levels':   this._updatePeakMeters(data);                   break
+      case 'master_volume':    this._syncMasterSlider(data.volume);             break
+      case 'master_mute':      this._syncMasterMute(data.mute);                break
+      case 'slider_volume':    this._syncSliderValue(data.index, data.volume);  break
+      case 'slider_mute':      this._syncSliderMute(data.index, data.mute);     break
+      case 'button_detected':  this._onButtonDetected(data.button_index);       break
+      case 'notification':     this.showToast(data.message);                   break
+      case 'peak_levels':      this._updatePeakMeters(data);                   break
     }
   },
 
@@ -31,14 +33,16 @@ Object.assign(window.blaudio, {
     return ['chrome.exe', 'Discord.exe', 'Spotify.exe', 'All Unassigned']
   },
 
-  async _apiCreateSlider(name, appNames, knobIndex) {
-    if (window.pywebview) return await window.pywebview.api.create_slider(name, appNames, knobIndex)
-    return { name, app_names: appNames, volume: 50, mute: false, knob_index: knobIndex }
+  async _apiCreateSlider(name, appNames, knobIndex, buttonIndex) {
+    if (window.pywebview) return await window.pywebview.api.create_slider(name, appNames, knobIndex, buttonIndex)
+    const btn = buttonIndex >= 0 ? buttonIndex : null
+    return { name, app_names: appNames, volume: 50, mute: false, knob_index: knobIndex, button_index: btn }
   },
 
-  async _apiEditSlider(index, name, appNames, knobIndex) {
-    if (window.pywebview) return await window.pywebview.api.edit_slider(index, name, appNames, knobIndex)
-    return { ...this.state.sliders[index], name, app_names: appNames, knob_index: knobIndex }
+  async _apiEditSlider(index, name, appNames, knobIndex, buttonIndex) {
+    if (window.pywebview) return await window.pywebview.api.edit_slider(index, name, appNames, knobIndex, buttonIndex)
+    const btn = buttonIndex >= 0 ? buttonIndex : null
+    return { ...this.state.sliders[index], name, app_names: appNames, knob_index: knobIndex, button_index: btn }
   },
 
   async _apiSetSliderVolume(index, value) {
@@ -60,6 +64,14 @@ Object.assign(window.blaudio, {
 
   async _apiSaveUiSetting(key, value) {
     if (window.pywebview) window.pywebview.api.save_ui_setting(key, value)
+  },
+
+  async _apiStartButtonDetection() {
+    if (window.pywebview) await window.pywebview.api.start_button_detection()
+  },
+
+  async _apiCancelButtonDetection() {
+    if (window.pywebview) await window.pywebview.api.cancel_button_detection()
   },
 
   async openMixer() {
