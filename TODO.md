@@ -23,6 +23,10 @@ Updated README to reference `slider_data.json` and `master_slider_data.json`.
 `blaudio.py` reads the same dicts in `on_serial_update()` on the Qt thread.
 No lock or thread-safe structure is used — could cause a race condition under load.
 
+### BLA-UI-HORZSLIDERBUG1
+
+Horizontal slider UI is incorrect. It requires a rewrite.
+
 ---
 
 ## Features
@@ -51,6 +55,13 @@ The commented-out `open_windows_volume_mixer` binding (line 141) is a ready exam
 There is a `# TODO: Add a check to see if the app is already running` comment in `__main__`
 (line 343). Launching a second instance silently competes for the serial port and save files.
 A mutex or socket-based check would prevent this.
+
+
+### BLA-UI-STYLE-1 - Add themes, selectable in Settings
+
+With our new web-based UI, we can use CSS and JS to create multiple themes, which the user can switch between.
+The initial theme pack should consist of the current theme, an alternative colour theme, a light theme, and a theme with horizontal sliders instead of vertical.
+The horizontal/vertical sliders can be controlled by another setting if that is more sensible.
 
 ---
 
@@ -114,11 +125,11 @@ HTML/CSS/vanilla JS — open `index.html` directly in any browser for design wor
 provided). No Qt, no kit setup, no code generation. `PySide6` replaced by `pywebview`,
 `pystray`, and `Pillow`.
 
-### BLA-UI-STYLE-1 - Add themes, selectable in Settings
+### BLA-UI-SLIDERARRANGE-1
 
-With our new web-based UI, we can use CSS and JS to create multiple themes, which the user can switch between.
-The initial theme pack should consist of the current theme, an alternative colour theme, a light theme, and a theme with horizontal sliders instead of vertical.
-The horizontal/vertical sliders can be controlled by another setting if that is more sensible.
+Once a slider is set up, the sliders are permanently set in the same order in the UI.
+It should be possible for the user to rearrange the slider order without affecting the functionality of their knobs and buttons.
+Rearrangement should automatically persist. Ideally, rearrangement should be possible by clicking and dragging the slider title, and the UI should auto update as the user moves the element.
 
 ---
 

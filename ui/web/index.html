@@ -13,7 +13,7 @@
     <div class="menu-entry">
       <span>Options</span>
       <div class="menu-drop">
-        <button class="menu-action" disabled>Settings</button>
+        <button class="menu-action" onclick="blaudio.openSettings()">Settings</button>
         <div class="menu-sep"></div>
         <button class="menu-action" onclick="blaudio.quit()">Quit</button>
       </div>
@@ -92,6 +92,32 @@
     <div class="dialog-actions">
       <button class="btn-flat" onclick="blaudio.closeModal()">Cancel</button>
       <button id="dialog-confirm-btn" class="btn-accent" onclick="blaudio.confirmSlider()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Settings panel ─────────────────────────────────────────── -->
+<div id="settings-overlay" class="hidden" onclick="blaudio.closeSettings(event)">
+  <div id="settings-dialog">
+    <h3>Settings</h3>
+
+    <label>Theme</label>
+    <div id="theme-picker"><!-- populated by app.js --></div>
+
+    <label>Slider layout</label>
+    <div id="layout-picker">
+      <button class="layout-opt" data-layout="vertical" onclick="blaudio.setLayout('vertical')">
+        <span class="layout-preview layout-preview-v"><i></i><i></i><i></i></span>
+        Vertical
+      </button>
+      <button class="layout-opt" data-layout="horizontal" onclick="blaudio.setLayout('horizontal')">
+        <span class="layout-preview layout-preview-h"><i></i><i></i><i></i></span>
+        Horizontal
+      </button>
+    </div>
+
+    <div class="dialog-actions">
+      <button class="btn-accent" onclick="blaudio.closeSettings()">Done</button>
     </div>
   </div>
 </div>

@@ -19,8 +19,8 @@ if __name__ == '__main__':
         'Blaudio',
         os.path.join(base_path, 'ui', 'web', 'index.html'),
         js_api=api,
-        width=900,
-        height=420,
+        width=1400,
+        height=800,
         min_size=(300, 300),
         background_color='#1a1a1a',
     )
