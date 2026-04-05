@@ -90,14 +90,22 @@ class SerialHandler:
             if master_slider.knob_index == knob_index:
                 self._api._master_volume  = knob_value
                 master_slider.volume      = knob_value
-                self._api._audio.apply_master_volume(knob_value)
+                # Push UI update first so the display is always responsive,
+                # then apply audio — a COM/pycaw error must not kill this thread.
                 self._api._push('master_volume', {'volume': knob_value})
+                try:
+                    self._api._audio.apply_master_volume(knob_value)
+                except Exception:
+                    pass
             else:
                 for i, slider in enumerate(sliders):
                     if slider.knob_index == knob_index:
                         slider.volume = knob_value
-                        self._api._audio.apply_slider_volume(knob_value, slider, sliders)
                         self._api._push('slider_volume', {'index': i, 'volume': knob_value})
+                        try:
+                            self._api._audio.apply_slider_volume(knob_value, slider, sliders)
+                        except Exception:
+                            pass
 
         for button_index, button_value in buttons.items():
             # Detect falling edge (button pressed, given INPUT_PULLUP wiring).

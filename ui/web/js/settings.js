@@ -3,8 +3,10 @@
 // Theme and layout settings panel.
 Object.assign(window.blaudio, {
 
-  _currentTheme:  'dark',
-  _currentLayout: 'vertical',
+  _currentTheme:   'dark',
+  _currentLayout:  'vertical',
+  _portDetecting:  false,
+  _detectedPort:   null,
   _themes: [
     { id: 'dark',      label: 'Dark',      bg: '#1a1a1a', accent: '#9C27B0' },
     { id: 'light',     label: 'Light',     bg: '#f4f4f5', accent: '#9C27B0' },
@@ -15,6 +17,7 @@ Object.assign(window.blaudio, {
   openSettings() {
     this._renderThemePicker()
     this._renderLayoutPicker()
+    this._renderPortDetection()
     document.getElementById('settings-overlay').classList.remove('hidden')
   },
 
@@ -68,6 +71,65 @@ Object.assign(window.blaudio, {
     document.querySelectorAll('.layout-opt').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.layout === this._currentLayout)
     })
+  },
+
+  startPortDetection() {
+    this._portDetecting = true
+    this._detectedPort  = null
+    this._renderPortDetection()
+    this._apiStartPortDetection()
+  },
+
+  cancelPortDetection() {
+    this._portDetecting = false
+    this._detectedPort  = null
+    this._apiCancelPortDetection()
+    this._renderPortDetection()
+  },
+
+  async saveDetectedPort() {
+    const port = this._detectedPort
+    if (!port) return
+    await this._apiSaveComPort(port)
+    this._detectedPort = null
+    this._renderPortDetection()
+    this.showToast(`Device saved on ${port}`)
+  },
+
+  _onPortDetected(port) {
+    this._portDetecting = false
+    this._detectedPort  = port
+    this._renderPortDetection()
+  },
+
+  _onPortDetectionFailed() {
+    this._portDetecting = false
+    this._detectedPort  = null
+    this._renderPortDetection()
+    this.showToast('No device found. Make sure it is plugged in and sweep a knob.')
+  },
+
+  _renderPortDetection() {
+    const el = document.getElementById('port-detect-section')
+    if (!el) return
+    if (this._portDetecting) {
+      el.innerHTML = `
+        <div class="detect-row">
+          <span class="detect-label">Sweep any knob on your device\u2026</span>
+          <button class="btn-flat detect-btn detecting"
+                  onclick="blaudio.cancelPortDetection()">Cancel</button>
+        </div>`
+    } else if (this._detectedPort) {
+      el.innerHTML = `
+        <div class="detect-row">
+          <span class="detect-label">Found on ${this._detectedPort}</span>
+          <button class="btn-accent" onclick="blaudio.saveDetectedPort()">Save</button>
+          <button class="btn-flat"   onclick="blaudio.cancelPortDetection()">Discard</button>
+        </div>`
+    } else {
+      el.innerHTML = `
+        <button class="btn-flat" onclick="blaudio.startPortDetection()">Detect Device</button>`
+    }
   },
 
 })

@@ -11,9 +11,11 @@ Object.assign(window.blaudio, {
       case 'master_mute':      this._syncMasterMute(data.mute);                break
       case 'slider_volume':    this._syncSliderValue(data.index, data.volume);  break
       case 'slider_mute':      this._syncSliderMute(data.index, data.mute);     break
-      case 'button_detected':  this._onButtonDetected(data.button_index);       break
-      case 'knob_detected':    this._onKnobDetected(data.knob_index);           break
-      case 'notification':     this.showToast(data.message);                   break
+      case 'button_detected':       this._onButtonDetected(data.button_index);  break
+      case 'knob_detected':         this._onKnobDetected(data.knob_index);      break
+      case 'port_detected':         this._onPortDetected(data.port);            break
+      case 'port_detection_failed': this._onPortDetectionFailed();              break
+      case 'notification':          this.showToast(data.message);               break
       case 'peak_levels':      this._updatePeakMeters(data);                   break
     }
   },
@@ -81,6 +83,19 @@ Object.assign(window.blaudio, {
 
   async _apiCancelKnobDetection() {
     if (window.pywebview) await window.pywebview.api.cancel_knob_detection()
+  },
+
+  async _apiStartPortDetection() {
+    if (window.pywebview) await window.pywebview.api.start_port_detection()
+    else setTimeout(() => this._onPortDetected('COM6'), 2000)  // mock
+  },
+
+  async _apiCancelPortDetection() {
+    if (window.pywebview) await window.pywebview.api.cancel_port_detection()
+  },
+
+  async _apiSaveComPort(port) {
+    if (window.pywebview) await window.pywebview.api.save_com_port(port)
   },
 
   async openMixer() {

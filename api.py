@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import time
 import threading
 
 from audio.audio_controller import ensure_com, AudioController
@@ -70,6 +71,8 @@ class Api:
 
         self._save_timer = None
         self._schedule_save()
+
+        self._port_detection_active = False
 
         self._serial_handler = SerialHandler(self.config, self)
         self._serial_reader  = SerialReader(
@@ -169,6 +172,72 @@ class Api:
     def cancel_knob_detection(self):
         """Abort an in-progress knob detection (e.g. dialog closed)."""
         self._serial_handler.cancel_knob_detection()
+
+    def start_port_detection(self):
+        """Scan all COM ports for a Blaudio device. Sweep a knob to identify it."""
+        if self._port_detection_active:
+            return
+        self._port_detection_active = True
+        self._serial_reader.suspend_for_detection()
+        threading.Thread(target=self._run_port_detection, daemon=True).start()
+
+    def cancel_port_detection(self):
+        """Abort an in-progress port scan and restore the serial connection."""
+        if self._port_detection_active:
+            self._port_detection_active = False
+            self._serial_reader.resume_from_detection()
+
+    def _run_port_detection(self):
+        import serial
+        import serial.tools.list_ports
+        ports = [p.device for p in serial.tools.list_ports.comports()]
+
+        result     = [None]
+        done_event = threading.Event()
+
+        def try_port(port):
+            try:
+                ser = serial.Serial(port, self.config['BAUD_RATE'], timeout=0.5)
+                deadline = time.time() + 30
+                while time.time() < deadline and self._port_detection_active and result[0] is None:
+                    if ser.in_waiting > 0:
+                        try:
+                            line = ser.readline().decode('utf-8', errors='ignore').strip()
+                            if 'VER' in line and 'KNOB' in line and 'BTN' in line:
+                                if result[0] is None:
+                                    result[0] = port
+                                    done_event.set()
+                                break
+                        except Exception:
+                            pass
+                    time.sleep(0.05)
+                ser.close()
+            except Exception:
+                pass
+
+        for port in ports:
+            threading.Thread(target=try_port, args=(port,), daemon=True).start()
+
+        done_event.wait(timeout=30)
+
+        if not self._port_detection_active:
+            return   # was cancelled; cleanup already done by cancel_port_detection
+
+        self._port_detection_active = False
+        self._serial_reader.resume_from_detection()
+
+        if result[0]:
+            self._push('port_detected', {'port': result[0]})
+        else:
+            self._push('port_detection_failed', {})
+
+    def save_com_port(self, port):
+        """Persist a new COM port to blaudio_config.json and reconnect."""
+        self.config['COM_PORT'] = port
+        config_path = os.path.join(self._app_path, 'blaudio_config.json')
+        with open(config_path, 'w') as f:
+            json.dump(self.config, f, indent=4)
+        self._serial_reader.reconnect(port)
 
     def reorder_sliders(self, order):
         order = [int(i) for i in order]

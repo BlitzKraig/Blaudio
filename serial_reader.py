@@ -27,13 +27,37 @@ class SerialReader:
         self.is_connected     = False
         self.heartbeat_message = 'BLAUDIO_HEARTBEAT\n'
 
-        self._loop_thread = threading.Thread(target=self._connection_loop, daemon=True)
+        self._suspended    = False
+        self._loop_thread  = threading.Thread(target=self._connection_loop, daemon=True)
         self._loop_thread.start()
 
     def _connection_loop(self):
         while True:
-            self.try_connect()
+            if not self._suspended:
+                self.try_connect()
             time.sleep(self.retry_interval)
+
+    def suspend_for_detection(self):
+        """Close the serial connection and pause auto-reconnect for port detection."""
+        self._suspended = True
+        self.is_connected = False
+        try:
+            self.ser.close()
+        except Exception:
+            pass
+
+    def resume_from_detection(self):
+        """Resume normal auto-reconnect after port detection."""
+        self._suspended = False
+
+    def reconnect(self, new_port):
+        """Switch to a new COM port; the connection loop will reconnect automatically."""
+        self.port = new_port
+        self.is_connected = False
+        try:
+            self.ser.close()
+        except Exception:
+            pass
 
     def send_heartbeat(self):
         try:
