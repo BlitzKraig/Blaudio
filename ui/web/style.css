@@ -25,6 +25,8 @@
   --vu-mid:    #ffee58;
   --vu-hi:     #ff9800;
   --vu-peak:   #f44336;
+  --vu-tick:   rgba(255,255,255,0.9);
+  --vu-tick-glow: rgba(255,255,255,0.5);
 }
 
 /* ── Reset ──────────────────────────────────────────────────────── */
@@ -282,8 +284,8 @@ body {
   width: 12px; height: 2px;
   border-radius: 1px;
   transform: translateX(-50%);
-  background: rgba(255,255,255,0.9);
-  box-shadow: 0 0 4px rgba(255,255,255,0.5);
+  background: var(--vu-tick);
+  box-shadow: 0 0 4px var(--vu-tick-glow);
   will-change: bottom;
   transition: bottom 0.4s ease-out;
 }
@@ -536,6 +538,8 @@ body.layout-horizontal .vu-peak {
   --vu-mid:    #f9a825;
   --vu-hi:     #e65100;
   --vu-peak:   #c62828;
+  --vu-tick:   rgba(30,30,30,0.85);
+  --vu-tick-glow: rgba(0,0,0,0.2);
 }
 [data-theme="light"] .menu-entry:hover                { background: rgba(0,0,0,0.06); }
 [data-theme="light"] .menu-drop                       { box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
