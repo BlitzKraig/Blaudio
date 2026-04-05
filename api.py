@@ -31,6 +31,13 @@ class Api:
         with open(os.path.join(self._app_path, 'blaudio_config.json')) as f:
             self.config = json.load(f)
 
+        self._ui_settings_path = os.path.join(self._app_path, 'ui_settings.json')
+        try:
+            with open(self._ui_settings_path) as f:
+                self._ui_settings = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            self._ui_settings = {}
+
         self._window      = None
         self._visible     = True
         self._force_quit  = False
@@ -80,7 +87,17 @@ class Api:
             'masterVolume': self._master_volume,
             'masterMute':   self._master_mute,
             'sliders':      [s.serialize() for s in self._sliders],
+            'theme':        self._ui_settings.get('theme',  'dark'),
+            'layout':       self._ui_settings.get('layout', 'vertical'),
         }
+
+    def save_ui_setting(self, key, value):
+        self._ui_settings[key] = value
+        try:
+            with open(self._ui_settings_path, 'w') as f:
+                json.dump(self._ui_settings, f, indent=2)
+        except Exception:
+            pass
 
     def set_master_volume(self, value):
         _ensure_com()

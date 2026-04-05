@@ -44,8 +44,9 @@ window.blaudio = {
 
   // ── Init ────────────────────────────────────────────────────────
   init(state) {
-    this._applyTheme(localStorage.getItem('blaudio-theme')   || 'dark')
-    this._applyLayout(localStorage.getItem('blaudio-layout') || 'vertical')
+    // Prefer server-persisted settings; fall back to localStorage for browser testing
+    this._applyTheme(state.theme   || localStorage.getItem('blaudio-theme')   || 'dark')
+    this._applyLayout(state.layout || localStorage.getItem('blaudio-layout') || 'vertical')
     this.state = state
     this._renderMaster()
     this._renderSliders()
@@ -433,13 +434,15 @@ window.blaudio = {
 
   setTheme(id) {
     this._applyTheme(id)
-    localStorage.setItem('blaudio-theme', id)
+    localStorage.setItem('blaudio-theme', id)  // fallback for browser testing
+    if (window.pywebview) window.pywebview.api.save_ui_setting('theme', id)
     this._renderThemePicker()
   },
 
   setLayout(layout) {
     this._applyLayout(layout)
-    localStorage.setItem('blaudio-layout', layout)
+    localStorage.setItem('blaudio-layout', layout)  // fallback for browser testing
+    if (window.pywebview) window.pywebview.api.save_ui_setting('layout', layout)
     this._renderLayoutPicker()
   },
 

@@ -63,6 +63,11 @@ With our new web-based UI, we can use CSS and JS to create multiple themes, whic
 The initial theme pack should consist of the current theme, an alternative colour theme, a light theme, and a theme with horizontal sliders instead of vertical.
 The horizontal/vertical sliders can be controlled by another setting if that is more sensible.
 
+### BLA-UI-HARDWAREKNOBDETECT-1
+
+When adding or editing a slider, we should provide a detect knob option. This will allow the user to interact with a knob to select that knob as the knob to tie to this slider.
+Since we are constantly updating values, and sometimes a knob may be between two values, causing noise, we should design this in such a way that it only reacts to clearly intentional knob changes, such as "move knob to min then max" (though with a window in case a knob cannot reach full min or max due to hardware issues)
+
 ---
 
 ## Improvements
@@ -130,6 +135,10 @@ provided). No Qt, no kit setup, no code generation. `PySide6` replaced by `pyweb
 Drag the slider label to reorder sliders. Live reorder updates the UI as you drag; order
 is committed to `slider_data.json` on drop via `api.reorder_sliders()`. ESC during drag
 restores the original order. Works in both vertical and horizontal layout modes.
+
+### BLA-UI-SLIDERINTERACT-1
+
+Sliders with an attached hardware knob should not be interactable in the UI, as this causes UI jumping.
 
 ---
 
