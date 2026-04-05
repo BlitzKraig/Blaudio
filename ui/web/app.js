@@ -16,6 +16,7 @@ const MOCK_STATE = {
 window.blaudio = {
 
   state: { version: '', masterVolume: 50, masterMute: false, sliders: [] },
+  _editIndex: null,
 
   // ── Python → JS event receiver ─────────────────────────────────
   _receive(payload) {
@@ -95,8 +96,8 @@ window.blaudio = {
                 onclick="blaudio.toggleSliderMute(${index})">🔇</button>
         <button class="icon-btn" title="Delete"
                 onclick="blaudio.removeSlider(${index})">🗑️</button>
-        <button class="icon-btn" title="Edit (coming soon)"
-                onclick="blaudio.showToast('Edit coming soon')">📝</button>
+        <button class="icon-btn" title="Edit"
+                onclick="blaudio.openEditSliderDialog(${index})">📝</button>
       </div>`
     return col
   },
@@ -152,29 +153,77 @@ window.blaudio = {
     setTimeout(() => document.getElementById('slider-name').focus(), 50)
   },
 
+  async openEditSliderDialog(index) {
+    const slider = this.state.sliders[index]
+    if (!slider) return
+
+    let apps = []
+    if (window.pywebview) {
+      apps = await window.pywebview.api.get_running_apps()
+    } else {
+      apps = ['chrome.exe', 'Discord.exe', 'Spotify.exe', 'All Unassigned']
+    }
+
+    // Merge in any assigned apps that may not currently be running
+    slider.app_names.forEach(a => { if (!apps.includes(a)) apps.unshift(a) })
+
+    const list = document.getElementById('app-list')
+    list.innerHTML = ''
+    apps.forEach(app => {
+      const label = document.createElement('label')
+      label.className = 'app-entry'
+      const checked = slider.app_names.includes(app) ? 'checked' : ''
+      label.innerHTML = `<input type="checkbox" value="${app}" ${checked}><span>${app}</span>`
+      list.appendChild(label)
+    })
+
+    document.getElementById('slider-name').value = slider.name
+    document.getElementById('knob-select').value = slider.knob_index ?? -1
+    document.getElementById('dialog-title').textContent = 'Edit Slider'
+    document.getElementById('dialog-confirm-btn').textContent = 'Save'
+    this._editIndex = index
+    document.getElementById('overlay').classList.remove('hidden')
+    setTimeout(() => document.getElementById('slider-name').focus(), 50)
+  },
+
   closeModal(e) {
     if (!e || e.target.id === 'overlay') {
       document.getElementById('overlay').classList.add('hidden')
+      this._editIndex = null
+      document.getElementById('dialog-title').textContent = 'Add Slider'
+      document.getElementById('dialog-confirm-btn').textContent = 'Add'
     }
   },
 
-  async confirmAddSlider() {
+  async confirmSlider() {
     const name = document.getElementById('slider-name').value.trim()
     if (!name) { document.getElementById('slider-name').focus(); return }
 
-    const appNames   = Array.from(document.querySelectorAll('#app-list input:checked')).map(cb => cb.value)
-    const knobIndex  = parseInt(document.getElementById('knob-select').value)
+    const appNames  = Array.from(document.querySelectorAll('#app-list input:checked')).map(cb => cb.value)
+    const knobIndex = parseInt(document.getElementById('knob-select').value)
 
-    let newSlider
-    if (window.pywebview) {
-      newSlider = await window.pywebview.api.create_slider(name, appNames, knobIndex)
+    if (this._editIndex !== null) {
+      let updated
+      if (window.pywebview) {
+        updated = await window.pywebview.api.edit_slider(this._editIndex, name, appNames, knobIndex)
+      } else {
+        updated = { ...this.state.sliders[this._editIndex], name, app_names: appNames, knob_index: knobIndex }
+      }
+      if (updated) {
+        this.state.sliders[this._editIndex] = updated
+        this._renderSliders()
+      }
     } else {
-      newSlider = { name, app_names: appNames, volume: 50, mute: false, knob_index: knobIndex }
-    }
-
-    if (newSlider) {
-      this.state.sliders.push(newSlider)
-      this._renderSliders()
+      let newSlider
+      if (window.pywebview) {
+        newSlider = await window.pywebview.api.create_slider(name, appNames, knobIndex)
+      } else {
+        newSlider = { name, app_names: appNames, volume: 50, mute: false, knob_index: knobIndex }
+      }
+      if (newSlider) {
+        this.state.sliders.push(newSlider)
+        this._renderSliders()
+      }
     }
     this.closeModal()
   },

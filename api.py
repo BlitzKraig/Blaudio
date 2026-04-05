@@ -110,6 +110,18 @@ class Api:
         self._slider_data.save(should_notify=False)
         return slider.serialize()
 
+    def edit_slider(self, index, name, app_names, knob_index):
+        index = int(index)
+        if not name or not (0 <= index < len(self._sliders)):
+            return None
+        knob = None if int(knob_index) < 0 else int(knob_index)
+        slider = self._sliders[index]
+        slider.name = name
+        slider.app_names = list(app_names)
+        slider.knob_index = knob
+        self._slider_data.save(should_notify=False)
+        return slider.serialize()
+
     def remove_slider(self, index):
         index = int(index)
         if 0 <= index < len(self._sliders):

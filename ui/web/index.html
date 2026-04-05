@@ -71,7 +71,7 @@
 <!-- ── Add Slider dialog ─────────────────────────────────────── -->
 <div id="overlay" class="hidden" onclick="blaudio.closeModal(event)">
   <div id="dialog">
-    <h3>Add Slider</h3>
+    <h3 id="dialog-title">Add Slider</h3>
 
     <label>Name</label>
     <input id="slider-name" class="dialog-input" type="text" placeholder="e.g. Gaming">
@@ -91,7 +91,7 @@
 
     <div class="dialog-actions">
       <button class="btn-flat" onclick="blaudio.closeModal()">Cancel</button>
-      <button class="btn-accent" onclick="blaudio.confirmAddSlider()">Add</button>
+      <button id="dialog-confirm-btn" class="btn-accent" onclick="blaudio.confirmSlider()">Add</button>
     </div>
   </div>
 </div>

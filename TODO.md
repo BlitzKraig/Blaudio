@@ -114,6 +114,12 @@ HTML/CSS/vanilla JS — open `index.html` directly in any browser for design wor
 provided). No Qt, no kit setup, no code generation. `PySide6` replaced by `pywebview`,
 `pystray`, and `Pillow`.
 
+### BLA-UI-STYLE-1 - Add themes, selectable in Settings
+
+With our new web-based UI, we can use CSS and JS to create multiple themes, which the user can switch between.
+The initial theme pack should consist of the current theme, an alternative colour theme, a light theme, and a theme with horizontal sliders instead of vertical.
+The horizontal/vertical sliders can be controlled by another setting if that is more sensible.
+
 ---
 
 ## Housekeeping
