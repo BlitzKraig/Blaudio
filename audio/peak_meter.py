@@ -1,5 +1,6 @@
 import time
 import threading
+import traceback
 from comtypes import CLSCTX_ALL, CoInitialize
 from pycaw.pycaw import AudioUtilities, IAudioMeterInformation
 
@@ -38,7 +39,10 @@ class PeakMeter:
     # ── Internal ─────────────────────────────────────────────────────
 
     def _loop(self):
-        CoInitialize()
+        try:
+            CoInitialize()
+        except OSError:
+            pass  # Already initialised on this thread — fine
         master_meter    = self._init_master_meter()
         cached_sessions = []
         last_refresh    = 0.0
@@ -72,6 +76,8 @@ class PeakMeter:
             )
             return iface.QueryInterface(IAudioMeterInformation)
         except Exception:
+            print('[peak_meter] _init_master_meter failed:')
+            traceback.print_exc()
             return None
 
     def _read_peaks(self, sessions, master_meter, sliders, master_mute):
