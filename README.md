@@ -2,7 +2,6 @@
 
 Grouped Windows audio control with custom Arduino hardware. Inspired by [Deej](https://github.com/omriharel/deej).
 
-> This is the first thing I've ever built with Python - the structure is not ideal. Improvements welcome.
 
 ## What is Blaudio?
 
@@ -39,8 +38,15 @@ Arduino Nano (USB Serial)          Windows PC
                                           |
                                           v
                                   +---------------------------+
+                                  | hardware/                 |
+                                  |   serial_handler.py       |
+                                  |   Translates events →     |
+                                  |   API actions             |
+                                  +---------------------------+
+                                          |
+                                          v
+                                  +---------------------------+
                                   | api.py  (Api class)       |
-                                  |   pycaw audio control     |
                                   |   Slider management       |
                                   |   JS ↔ Python bridge      |
                                   +---------------------------+
@@ -48,9 +54,17 @@ Arduino Nano (USB Serial)          Windows PC
                               +--------+          +----------+
                               v                              v
                     +------------------+         +------------------+
-                    | ui/web/          |         | tray.py          |
-                    |   HTML/CSS/JS    |         |   pystray tray   |
-                    |   pywebview      |         +------------------+
+                    | audio/           |         | tray.py          |
+                    |   audio_         |         |   pystray tray   |
+                    |   controller.py  |         +------------------+
+                    |   peak_meter.py  |
+                    +------------------+
+                              |
+                              v
+                    +------------------+
+                    | ui/web/          |
+                    |   HTML/CSS/JS    |
+                    |   pywebview      |
                     +------------------+
 ```
 
@@ -68,10 +82,26 @@ blaudio.spec            PyInstaller build spec for creating standalone exe
 tasks.py                Invoke tasks (start, buildEXE)
 version.txt             Version info for PyInstaller (currently v0.0.7)
 
+audio/
+  audio_controller.py   Wraps pycaw to control master volume/mute and per-app volumes
+  peak_meter.py         Background thread polling audio levels at ~20fps, pushes to UI
+
+hardware/
+  serial_handler.py     Translates raw serial knob/button events into API actions
+
 ui/web/
   index.html            Main application window (HTML shell)
   style.css             Theme system — Dark, Light, Ocean, Synthwave + horizontal layout CSS
-  app.js                All UI logic — window.blaudio namespace, Python↔JS bridge
+  app.js                App init, bootstrap, and window.blaudio namespace assembly
+  js/
+    api_bridge.js       Python → JS event receiver (_receive) and pywebview.api.* wrappers
+    sliders.js          Dynamic slider rendering and drag-to-reorder
+    dialogs.js          Add/Edit slider modals and hardware button detection UI
+    settings.js         Theme and layout picker, persists UI settings
+    master_slider.js    Master volume control and mute interactions
+    vu_meter.js         Real-time peak meter rendering
+    state.js            UI state management and MOCK_STATE for browser testing
+    utils.js            Shared helper utilities
 
 resources/
   storm.ico             Application icon
@@ -216,14 +246,22 @@ The UI lives entirely in `ui/web/` — plain HTML, CSS, and vanilla JavaScript. 
 | ---- | ------- |
 | `ui/web/index.html` | HTML shell: menubar, master panel, slider area, add-slider dialog, toast |
 | `ui/web/style.css` | Theme system: CSS custom properties for Dark, Light, Ocean, and Synthwave themes |
-| `ui/web/app.js` | All UI logic in the `window.blaudio` namespace |
+| `ui/web/app.js` | App init and bootstrap; assembles `window.blaudio` from the modules below |
+| `ui/web/js/api_bridge.js` | `_receive()` event handler and all `pywebview.api.*` call wrappers |
+| `ui/web/js/sliders.js` | Dynamic slider rendering and drag-to-reorder |
+| `ui/web/js/dialogs.js` | Add/Edit slider modals and hardware button detection UI |
+| `ui/web/js/settings.js` | Theme and layout picker; persists choices to server and localStorage |
+| `ui/web/js/master_slider.js` | Master volume control and mute button interactions |
+| `ui/web/js/vu_meter.js` | Real-time peak meter rendering with peak-hold tick |
+| `ui/web/js/state.js` | UI state management and `MOCK_STATE` for browser testing |
+| `ui/web/js/utils.js` | Shared helper utilities (toast notifications, formatting, etc.) |
 
 ### Browser-first development
 
-`app.js` includes a `MOCK_STATE` object at the top with sample sliders. When `index.html` is opened directly in a browser (without pywebview), the UI initialises from this mock data instead of calling Python. This means you can iterate on layout and styling entirely in your browser — no Python runtime needed.
+`js/state.js` defines a `MOCK_STATE` object with sample sliders. When `index.html` is opened directly in a browser (without pywebview), the UI initialises from this mock data instead of calling Python. This means you can iterate on layout and styling entirely in your browser — no Python runtime needed.
 
 ```javascript
-// app.js — edit this to change the design preview data
+// js/state.js — edit this to change the design preview data
 const MOCK_STATE = {
   version: 'v0.0.7',
   masterVolume: 50,
@@ -243,13 +281,20 @@ All design tokens are defined as CSS variables at the top of `style.css`. Change
 :root {
   --bg-primary:    #1a1a1a;   /* main window background */
   --bg-secondary:  #222222;   /* panel/card background  */
-  --bg-tertiary:   #2a2a2a;   /* input/hover background */
+  --bg-hover:      #2a2a2a;   /* hover state */
+  --bg-input:      #2d2d2d;   /* input fields */
   --accent:        #9C27B0;   /* purple — buttons, sliders, focus rings */
   --accent-hover:  #AB47BC;
   --danger:        #e53935;   /* delete / muted state */
   --text-primary:  #e0e0e0;
-  --text-muted:    #888888;
-  --border:        #333333;
+  --text-secondary:#9e9e9e;
+  --text-muted:    #4a4a4a;
+  --divider:       #2e2e2e;
+  --vu-low:        #00e676;   /* VU meter — safe level  */
+  --vu-mid:        #ffee58;   /* VU meter — caution     */
+  --vu-hi:         #ff9800;   /* VU meter — warning     */
+  --vu-peak:       #f44336;   /* VU meter — peak/clip   */
+  --vu-tick:       rgba(255,255,255,0.9); /* peak-hold tick */
 }
 ```
 
@@ -275,7 +320,7 @@ self._push('notification',  {'message': 'Button 0 pressed'})
 ```
 
 ```javascript
-// app.js — handle incoming events
+// js/api_bridge.js — handle incoming events
 _receive(payload) {
   const { event, data } = payload
   switch (event) {
@@ -286,14 +331,14 @@ _receive(payload) {
 ```
 
 To add a new Python-callable action: add a public method to `Api` in `api.py`.
-To push a new event type to JS: call `self._push('event_name', {...})` from Python and add a `case` to `_receive()` in `app.js`.
+To push a new event type to JS: call `self._push('event_name', {...})` from Python and add a `case` to `_receive()` in `js/api_bridge.js`.
 
 ### Swapping the UI framework
 
 The `ui/web/` directory is self-contained. To replace the UI with a different framework (React, Vue, Svelte, etc.):
 
 1. Build your new UI so it produces a static `index.html` (and any assets) in `ui/web/`
-2. Keep the `window.blaudio` namespace: `init(state)`, `_receive(payload)`, and the `window.pywebview.api.*` call sites
+2. Keep the `window.blaudio` namespace: `init(state)` (entry point in `app.js`), `_receive(payload)` (event handler in `js/api_bridge.js`), and the `window.pywebview.api.*` call sites
 3. The Python side (`api.py`) does not need to change
 
 ## How It Works
