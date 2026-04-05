@@ -209,7 +209,7 @@ To start Blaudio on login, create a shortcut in:
 2. Create and activate a virtual environment, then install dependencies:
 
    ```
-   pip install pywebview pystray Pillow pycaw pyserial comtypes numpy invoke pyinstaller
+   pip install -r requirements.txt
    ```
 
 3. Use invoke tasks:
