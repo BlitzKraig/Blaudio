@@ -16,8 +16,8 @@ The app lives in the system tray when minimized and auto-reconnects after sleep.
 - **Per-app volume control** - assign one or more running applications to each slider
 - **"All Unassigned" mode** - a single slider controls every app not explicitly assigned (great for games)
 - **Master volume slider** - system-wide volume control mapped to a dedicated knob
-- **Hardware knob mapping** - up to 5 potentiometers, each assignable to a slider
-- **Hardware buttons** - 6 buttons for mute toggle, show/hide window, etc.
+- **Hardware knob mapping** - up to 5 potentiometers, each assignable to a slider; use Detect to map by turning the knob
+- **Hardware buttons** - 6 buttons for mute toggle, show/hide window, etc.; use Detect to map by pressing the button
 - **System tray** - minimizes to tray, runs silently in the background
 - **Auto-reconnect** - handles sleep/wake cycles without losing configuration
 - **Persistent config** - slider assignments are saved and restored on startup (auto-saves every 5 minutes)
@@ -79,7 +79,7 @@ slider_data.py          Persistence layer - saves/loads slider config as JSON
 tray.py                 System tray icon (pystray) with show/hide/quit menu
 blaudio_config.json     Runtime config (COM port, button/knob assignments, baud rate)
 blaudio.spec            PyInstaller build spec for creating standalone exe
-tasks.py                Invoke tasks (start, buildEXE)
+tasks.py                Invoke tasks (start, buildEXE, bump)
 version.txt             Version info for PyInstaller (currently v0.0.7)
 
 audio/
@@ -96,7 +96,7 @@ ui/web/
   js/
     api_bridge.js       Python → JS event receiver (_receive) and pywebview.api.* wrappers
     sliders.js          Dynamic slider rendering and drag-to-reorder
-    dialogs.js          Add/Edit slider modals and hardware button detection UI
+    dialogs.js          Add/Edit slider modals and hardware knob/button detection UI
     settings.js         Theme and layout picker, persists UI settings
     master_slider.js    Master volume control and mute interactions
     vu_meter.js         Real-time peak meter rendering
@@ -183,7 +183,7 @@ Knob values are smoothed on the PC side using a rolling average over 10 samples 
 **Build tools:**
 
 - **PyInstaller** - Standalone exe packaging
-- **invoke** - Task runner (`invoke start`, `invoke buildEXE`)
+- **invoke** - Task runner (`invoke start`, `invoke buildEXE`, `invoke bump`)
 
 ## Installation
 
@@ -215,6 +215,7 @@ To start Blaudio on login, create a shortcut in:
 3. Use invoke tasks:
    - `invoke start` - Run the app
    - `invoke buildEXE` - Build standalone exe with PyInstaller
+   - `invoke bump --version X.Y.Z` - Update the version number across all project files
 
 ### Hardware setup
 
@@ -366,8 +367,9 @@ The `ui/web/` directory is self-contained. To replace the UI with a different fr
 1. Click "Add Slider" in the toolbar
 2. Enter a name for the slider
 3. Select running applications from the checklist (or choose "All Unassigned")
-4. Optionally assign a hardware knob (0-4)
-5. The slider appears in the scrollable area and persists across restarts
+4. Optionally assign a hardware knob — click **Detect** and sweep the knob from min to max
+5. Optionally assign a hardware mute button — click **Detect** and press the button
+6. The slider appears in the scrollable area and persists across restarts
 
 ## Current Status
 
