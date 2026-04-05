@@ -180,3 +180,5 @@ pyrightconfig.json
 *.pkl
 *.pkl.bak
 *slider_data.json
+
+ui_settings.json
