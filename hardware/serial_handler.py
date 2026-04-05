@@ -20,6 +20,7 @@ class SerialHandler:
         """
         self._config             = config
         self._api                = api
+        self._last_knob_values   = {}
         self._last_button_values = {}
 
     # ── SerialReader callbacks ────────────────────────────────────────
@@ -32,6 +33,11 @@ class SerialHandler:
         sliders       = self._api._sliders
 
         for knob_index, knob_value in knobs.items():
+            # Skip if the value hasn't changed since the last poll.
+            if self._last_knob_values.get(knob_index) == knob_value:
+                continue
+            self._last_knob_values[knob_index] = knob_value
+
             if master_slider.knob_index == knob_index:
                 # Hardware moved the master knob
                 self._api._master_volume  = knob_value
