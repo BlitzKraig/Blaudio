@@ -1,10 +1,11 @@
 import os
 import sys
 import json
+import time
 import threading
 import subprocess
 from comtypes import CLSCTX_ALL, CoInitialize, CoUninitialize
-from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume, IAudioEndpointVolume
+from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume, IAudioEndpointVolume, IAudioMeterInformation
 from slider_data import SliderData
 from serial_reader import SerialReader
 from slider import Slider
@@ -58,6 +59,7 @@ class Api:
         self._last_button_values = {}
         self._save_timer = None
         self._schedule_save()
+        self._peak_meter_active = False
 
         self._serial_reader = SerialReader(
             self.config['COM_PORT'],
@@ -68,6 +70,7 @@ class Api:
 
     def set_window(self, window):
         self._window = window
+        self._start_peak_meter()
 
     # ── JS-callable API ──────────────────────────────────────────────
 
@@ -170,6 +173,7 @@ class Api:
 
     def quit(self):
         self._force_quit = True
+        self._stop_peak_meter()
         if self._save_timer:
             self._save_timer.cancel()
         self._slider_data.save(should_notify=False)
@@ -261,15 +265,18 @@ class Api:
     # ── Serial callbacks ─────────────────────────────────────────────
 
     def _on_serial_update(self, knobs, buttons):
+        _ensure_com()
         for knob_index, knob_value in knobs.items():
             if self._master_slider.knob_index == knob_index:
                 self._master_volume = knob_value
                 self._master_slider.volume = knob_value
+                self._apply_master_volume(knob_value)
                 self._push('master_volume', {'volume': knob_value})
             else:
                 for i, slider in enumerate(self._sliders):
                     if slider.knob_index == knob_index:
                         slider.volume = knob_value
+                        self._apply_volume(knob_value, slider)
                         self._push('slider_volume', {'index': i, 'volume': knob_value})
 
         for button_index, button_value in buttons.items():
@@ -287,3 +294,101 @@ class Api:
 
     def _on_message(self, message):
         self._push('notification', {'message': message})
+
+    # ── Peak meter ───────────────────────────────────────────────────
+
+    def _start_peak_meter(self):
+        self._peak_meter_active = True
+        t = threading.Thread(target=self._peak_meter_loop, daemon=True)
+        t.start()
+
+    def _stop_peak_meter(self):
+        self._peak_meter_active = False
+
+    def _peak_meter_loop(self):
+        CoInitialize()
+
+        # Activate the endpoint meter once in this thread's COM context
+        master_meter = None
+        try:
+            iface = AudioUtilities.GetSpeakers().Activate(
+                IAudioMeterInformation._iid_, CLSCTX_ALL, None
+            )
+            master_meter = iface.QueryInterface(IAudioMeterInformation)
+        except Exception:
+            pass
+
+        cached_sessions  = []
+        last_refresh     = 0.0
+
+        while self._peak_meter_active:
+            now = time.monotonic()
+
+            # Re-enumerate sessions every 2 s to pick up new/closed apps
+            if now - last_refresh > 2.0:
+                try:
+                    cached_sessions = [
+                        s for s in AudioUtilities.GetAllSessions() if s.Process
+                    ]
+                except Exception:
+                    cached_sessions = []
+                last_refresh = now
+
+            try:
+                self._push('peak_levels', self._read_peaks(cached_sessions, master_meter))
+            except Exception:
+                pass
+
+            time.sleep(0.05)   # 20 fps — light enough not to stress the CPU
+
+    def _read_peaks(self, sessions, master_meter):
+        # Build app_name → peak map from cached sessions
+        app_peaks = {}
+        for session in sessions:
+            try:
+                meter = session._ctl.QueryInterface(IAudioMeterInformation)
+                peak  = meter.GetPeakValue()
+                name  = session.Process.name()
+                if peak > app_peaks.get(name, 0.0):
+                    app_peaks[name] = peak
+            except Exception:
+                pass
+
+        # Master endpoint peak
+        try:
+            master_peak = master_meter.GetPeakValue() if master_meter else 0.0
+        except Exception:
+            master_peak = max(app_peaks.values(), default=0.0)
+
+        if self._master_mute:
+            master_peak = 0.0
+
+        # Per-slider peaks (snapshot to avoid race with mutation)
+        sliders  = list(self._sliders)
+        assigned = {
+            a for s in sliders
+            for a in s.app_names
+            if 'All Unassigned' not in s.app_names
+        }
+
+        slider_peaks = []
+        for slider in sliders:
+            if slider.mute:
+                slider_peaks.append(0.0)
+                continue
+            if 'All Unassigned' in slider.app_names:
+                peak = max(
+                    (v for k, v in app_peaks.items() if k not in assigned),
+                    default=0.0,
+                )
+            else:
+                peak = max(
+                    (app_peaks.get(a, 0.0) for a in slider.app_names),
+                    default=0.0,
+                )
+            slider_peaks.append(round(peak, 4))
+
+        return {
+            'master':  round(master_peak, 4),
+            'sliders': slider_peaks,
+        }

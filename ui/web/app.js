@@ -20,6 +20,7 @@ window.blaudio = {
   _dragMoved: false,
   _draggingCol: null,
   _containerDragover: null,
+  _peakHold: {},
   _currentTheme: 'dark',
   _currentLayout: 'vertical',
   _themes: [
@@ -33,10 +34,11 @@ window.blaudio = {
   _receive(payload) {
     const { event, data } = payload
     switch (event) {
-      case 'master_volume': this._syncMasterSlider(data.volume);          break
-      case 'master_mute':   this._syncMasterMute(data.mute);              break
+      case 'master_volume': this._syncMasterSlider(data.volume);            break
+      case 'master_mute':   this._syncMasterMute(data.mute);               break
       case 'slider_volume': this._syncSliderValue(data.index, data.volume); break
-      case 'notification':  this.showToast(data.message);                 break
+      case 'notification':  this.showToast(data.message);                  break
+      case 'peak_levels':   this._updatePeakMeters(data);                  break
     }
   },
 
@@ -47,6 +49,7 @@ window.blaudio = {
     this.state = state
     this._renderMaster()
     this._renderSliders()
+    this._initMasterInteractions()
   },
 
   // ── Master slider ───────────────────────────────────────────────
@@ -78,6 +81,8 @@ window.blaudio = {
     this.state.masterVolume = volume
     const el = document.getElementById('master-slider')
     if (el) el.value = volume
+    const panel = document.getElementById('master-panel')
+    if (panel) this._showVolReadout(panel, volume)
   },
 
   _syncMasterMute(mute) {
@@ -127,9 +132,13 @@ window.blaudio = {
     col.innerHTML = `
       <span class="slider-label" title="${slider.name}">${slider.name}</span>
       <div class="slider-wrapper">
+        <div class="vu-meter">
+          <div class="vu-bar"></div>
+          <div class="vu-peak"></div>
+        </div>
+        <span class="vol-readout"></span>
         <input type="range" class="vslider" min="0" max="100" value="${slider.volume}"
-               ${slider.mute ? 'disabled' : ''}
-               oninput="blaudio.setSliderVolume(${index}, this.value)">
+               ${slider.mute ? 'disabled' : ''}>
       </div>
       <div class="slider-controls">
         <button class="icon-btn mute-btn${slider.mute ? ' active' : ''}" title="Mute"
@@ -139,6 +148,28 @@ window.blaudio = {
         <button class="icon-btn" title="Edit"
                 onclick="blaudio.openEditSliderDialog(${index})">📝</button>
       </div>`
+
+    // Range input: fire volume update + readout on drag
+    const rangeInput = col.querySelector('.vslider')
+    rangeInput.addEventListener('input', e => {
+      const val = parseInt(e.target.value)
+      this.state.sliders[index].volume = val
+      this.setSliderVolume(index, val)
+      this._showVolReadout(col, val)
+    })
+
+    // Scroll wheel: nudge volume ±2 per notch
+    col.addEventListener('wheel', e => {
+      e.preventDefault()
+      const delta  = e.deltaY < 0 ? 2 : -2
+      const cur    = this.state.sliders[index]
+      if (!cur) return
+      const newVol = Math.min(100, Math.max(0, cur.volume + delta))
+      cur.volume   = newVol
+      rangeInput.value = newVol
+      this.setSliderVolume(index, newVol)
+      this._showVolReadout(col, newVol)
+    }, { passive: false })
 
     // ── Drag-to-reorder ─────────────────────────────────────────
     // draggable is on the *label* (the handle), not the whole col.
@@ -207,6 +238,7 @@ window.blaudio = {
     const col = document.querySelector(`.slider-col[data-index="${index}"]`)
     const input = col && col.querySelector('.vslider')
     if (input) input.value = volume
+    if (col) this._showVolReadout(col, volume)
   },
 
   // ── Add slider dialog ───────────────────────────────────────────
@@ -306,6 +338,84 @@ window.blaudio = {
       }
     }
     this.closeModal()
+  },
+
+  // ── VU meters ───────────────────────────────────────────────────
+  _updatePeakMeters({ master, sliders }) {
+    const masterBar  = document.querySelector('#master-vu .vu-bar')
+    const masterPeak = document.querySelector('#master-vu .vu-peak')
+    this._setPeak('master', master, masterBar, masterPeak)
+
+    sliders.forEach((peak, i) => {
+      const col = document.querySelector(`.slider-col[data-index="${i}"]`)
+      if (!col) return
+      this._setPeak(i, peak, col.querySelector('.vu-bar'), col.querySelector('.vu-peak'))
+    })
+  },
+
+  _setPeak(key, peakVal, barEl, peakEl) {
+    if (!barEl) return
+    const isHoriz = document.body.classList.contains('layout-horizontal')
+
+    // Move bar via GPU-composited transform (no layout reflow)
+    barEl.style.transform = isHoriz
+      ? `translateY(-50%) scaleX(${peakVal})`
+      : `translateX(-50%) scaleY(${peakVal})`
+
+    // Peak hold: advance when higher, decay after 1.5 s
+    let held = this._peakHold[key]
+    if (!held) held = this._peakHold[key] = { value: 0, timer: null }
+
+    if (peakVal >= held.value) {
+      held.value = peakVal
+      clearTimeout(held.timer)
+      held.timer = setTimeout(() => {
+        held.value = 0
+        if (peakEl) {
+          if (isHoriz) peakEl.style.left   = '0%'
+          else         peakEl.style.bottom = '0%'
+        }
+      }, 1500)
+    }
+
+    if (peakEl) {
+      const pos = `${held.value * 100}%`
+      if (isHoriz) peakEl.style.left   = pos
+      else         peakEl.style.bottom = pos
+    }
+  },
+
+  // ── Volume readout ───────────────────────────────────────────────
+  _showVolReadout(container, value) {
+    const el = container.querySelector('.vol-readout')
+    if (!el) return
+    el.textContent = value
+    el.classList.add('visible')
+    clearTimeout(el._hideTimer)
+    el._hideTimer = setTimeout(() => el.classList.remove('visible'), 1200)
+  },
+
+  // ── Master panel interactions (set up once in init) ───────────────
+  _initMasterInteractions() {
+    const panel  = document.getElementById('master-panel')
+    const slider = document.getElementById('master-slider')
+    if (!panel || !slider) return
+
+    // Show readout while dragging
+    slider.addEventListener('input', () => {
+      this._showVolReadout(panel, parseInt(slider.value))
+    })
+
+    // Scroll wheel on the whole master panel
+    panel.addEventListener('wheel', e => {
+      e.preventDefault()
+      const delta  = e.deltaY < 0 ? 2 : -2
+      const newVol = Math.min(100, Math.max(0, this.state.masterVolume + delta))
+      this.state.masterVolume = newVol
+      slider.value = newVol
+      this.setMasterVolume(newVol)
+      this._showVolReadout(panel, newVol)
+    }, { passive: false })
   },
 
   // ── Settings ────────────────────────────────────────────────────

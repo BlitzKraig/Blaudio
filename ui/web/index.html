@@ -33,6 +33,11 @@
     <div id="master-panel">
       <span class="slider-label master-label">MASTER</span>
       <div class="slider-wrapper">
+        <div class="vu-meter" id="master-vu">
+          <div class="vu-bar"></div>
+          <div class="vu-peak"></div>
+        </div>
+        <span class="vol-readout"></span>
         <input id="master-slider" type="range" class="vslider"
                min="0" max="100" value="50"
                oninput="blaudio.setMasterVolume(this.value)">
