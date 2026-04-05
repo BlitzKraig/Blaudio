@@ -125,11 +125,11 @@ HTML/CSS/vanilla JS — open `index.html` directly in any browser for design wor
 provided). No Qt, no kit setup, no code generation. `PySide6` replaced by `pywebview`,
 `pystray`, and `Pillow`.
 
-### BLA-UI-SLIDERARRANGE-1
+### ~~BLA-UI-SLIDERARRANGE-1~~ ✅ DONE
 
-Once a slider is set up, the sliders are permanently set in the same order in the UI.
-It should be possible for the user to rearrange the slider order without affecting the functionality of their knobs and buttons.
-Rearrangement should automatically persist. Ideally, rearrangement should be possible by clicking and dragging the slider title, and the UI should auto update as the user moves the element.
+Drag the slider label to reorder sliders. Live reorder updates the UI as you drag; order
+is committed to `slider_data.json` on drop via `api.reorder_sliders()`. ESC during drag
+restores the original order. Works in both vertical and horizontal layout modes.
 
 ---
 

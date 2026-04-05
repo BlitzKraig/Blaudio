@@ -122,6 +122,14 @@ class Api:
         self._slider_data.save(should_notify=False)
         return slider.serialize()
 
+    def reorder_sliders(self, order):
+        order = [int(i) for i in order]
+        if sorted(order) != list(range(len(self._sliders))):
+            return False  # invalid order — ignore
+        self._sliders = [self._sliders[i] for i in order]
+        self._slider_data.save(should_notify=False)
+        return True
+
     def remove_slider(self, index):
         index = int(index)
         if 0 <= index < len(self._sliders):

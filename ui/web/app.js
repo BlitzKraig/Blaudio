@@ -17,6 +17,9 @@ window.blaudio = {
 
   state: { version: '', masterVolume: 50, masterMute: false, sliders: [] },
   _editIndex: null,
+  _dragMoved: false,
+  _draggingCol: null,
+  _containerDragover: null,
   _currentTheme: 'dark',
   _currentLayout: 'vertical',
   _themes: [
@@ -86,8 +89,35 @@ window.blaudio = {
   _renderSliders() {
     const container = document.getElementById('sliders-container')
     if (!container) return
+
+    // Remove stale delegated dragover before rebuilding
+    if (this._containerDragover) {
+      container.removeEventListener('dragover', this._containerDragover)
+    }
+
     container.innerHTML = ''
     this.state.sliders.forEach((slider, i) => container.appendChild(this._makeCol(slider, i)))
+
+    // Single delegated dragover for the whole container.
+    // Catches events from any depth of children so the cursor never "misses".
+    this._containerDragover = e => {
+      const src = this._draggingCol
+      if (!src) return
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+      const targetCol = e.target.closest('.slider-col')
+      if (!targetCol || targetCol === src) return
+      const rect   = targetCol.getBoundingClientRect()
+      const before = document.body.classList.contains('layout-horizontal')
+        ? e.clientY < rect.top  + rect.height / 2
+        : e.clientX < rect.left + rect.width  / 2
+      const ref = before ? targetCol : targetCol.nextSibling
+      if (src.nextSibling !== ref) {
+        container.insertBefore(src, ref)
+        this._dragMoved = true
+      }
+    }
+    container.addEventListener('dragover', this._containerDragover)
   },
 
   _makeCol(slider, index) {
@@ -109,7 +139,47 @@ window.blaudio = {
         <button class="icon-btn" title="Edit"
                 onclick="blaudio.openEditSliderDialog(${index})">📝</button>
       </div>`
+
+    // ── Drag-to-reorder ─────────────────────────────────────────
+    // draggable is on the *label* (the handle), not the whole col.
+    // In HTML5 DnD, e.target on a dragstart is always the draggable
+    // element itself, so we can't guard by checking e.target on the col.
+    const label = col.querySelector('.slider-label')
+    label.draggable = true
+
+    label.addEventListener('dragstart', e => {
+      this._draggingCol = col
+      this._dragMoved   = false
+      col.classList.add('dragging')
+      e.dataTransfer.effectAllowed = 'move'
+      e.dataTransfer.setData('text/plain', String(index))
+      // Use the whole column as the drag ghost image
+      const r = col.getBoundingClientRect()
+      e.dataTransfer.setDragImage(col, e.clientX - r.left, e.clientY - r.top)
+    })
+
+    label.addEventListener('dragend', e => {
+      col.classList.remove('dragging')
+      this._draggingCol = null
+      if (this._dragMoved && e.dataTransfer.dropEffect !== 'none') {
+        this._commitDragOrder()
+      } else if (this._dragMoved) {
+        this._renderSliders()  // cancelled (ESC) after partial move — restore
+      }
+    })
+
     return col
+  },
+
+  async _commitDragOrder() {
+    const container = document.getElementById('sliders-container')
+    if (!container) return
+    // Read the original indices in their new DOM positions
+    const domOrder = Array.from(container.querySelectorAll('.slider-col'))
+      .map(el => parseInt(el.dataset.index))
+    this.state.sliders = domOrder.map(i => this.state.sliders[i])
+    this._renderSliders()  // re-render to refresh indices and onclick handlers
+    if (window.pywebview) await window.pywebview.api.reorder_sliders(domOrder)
   },
 
   async setSliderVolume(index, value) {

@@ -238,6 +238,11 @@ body {
 }
 .vslider:disabled { cursor: not-allowed; opacity: 0.35; }
 
+/* ── Drag-to-reorder ────────────────────────────────────────────── */
+.slider-label         { cursor: grab; }
+.slider-label:active  { cursor: grabbing; }
+.slider-col.dragging  { opacity: 0.25; cursor: grabbing; }
+
 /* ── Slider controls ────────────────────────────────────────────── */
 .slider-controls {
   display: flex;

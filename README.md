@@ -22,6 +22,9 @@ The app lives in the system tray when minimized and auto-reconnects after sleep.
 - **System tray** - minimizes to tray, runs silently in the background
 - **Auto-reconnect** - handles sleep/wake cycles without losing configuration
 - **Persistent config** - slider assignments are saved and restored on startup (auto-saves every 5 minutes)
+- **Drag-to-reorder** - drag any slider by its title label to reorder; persists automatically
+- **Themes** - Dark, Light, Ocean, and Synthwave themes selectable from Settings
+- **Horizontal layout** - switch between vertical and horizontal slider orientations in Settings
 - **Master mute** - dedicated hardware button to toggle system mute
 
 ## Architecture Overview
@@ -67,7 +70,7 @@ version.txt             Version info for PyInstaller (currently v0.0.7)
 
 ui/web/
   index.html            Main application window (HTML shell)
-  style.css             Dark theme with CSS custom properties (design tokens)
+  style.css             Theme system — Dark, Light, Ocean, Synthwave + horizontal layout CSS
   app.js                All UI logic — window.blaudio namespace, Python↔JS bridge
 
 resources/
@@ -212,7 +215,7 @@ The UI lives entirely in `ui/web/` — plain HTML, CSS, and vanilla JavaScript. 
 | File | Purpose |
 | ---- | ------- |
 | `ui/web/index.html` | HTML shell: menubar, master panel, slider area, add-slider dialog, toast |
-| `ui/web/style.css` | Dark theme using CSS custom properties (design tokens) |
+| `ui/web/style.css` | Theme system: CSS custom properties for Dark, Light, Ocean, and Synthwave themes |
 | `ui/web/app.js` | All UI logic in the `window.blaudio` namespace |
 
 ### Browser-first development
@@ -327,9 +330,8 @@ The `ui/web/` directory is self-contained. To replace the UI with a different fr
 
 **Known limitations:**
 
-- Edit slider functionality is not yet implemented (button exists but shows a toast)
-- Settings menu is present but does nothing
 - Some button indices are unassigned (show a notification when pressed)
+- Horizontal slider layout has a known rendering issue (BLA-UI-HORZSLIDERBUG1)
 
 ## License
 
