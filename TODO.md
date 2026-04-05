@@ -31,24 +31,26 @@ Horizontal slider UI is incorrect. It requires a rewrite.
 
 ## Features
 
-### BLA-004 · Edit slider functionality `feature`
+### ~~BLA-004 · Edit slider functionality `feature`~~
 
 The Edit button on each slider fires a "coming soon" notification (line 227).
 Should open a dialog pre-populated with the slider's current name, apps, and knob assignment,
 matching the existing Create Slider dialog flow.
 
-### BLA-005 · Settings menu `feature`
+### ~~BLA-005 · Settings menu `feature`~~
 
 `ui.actionSettings.setEnabled(False)` (line 101) — the menu item exists but does nothing.
 Candidates for a settings panel: auto-save interval, smoothing window size, notification duration,
 COM port override without editing JSON directly.
 
-### BLA-006 · Configurable button actions `feature`
+### ~~BLA-006 · Configurable button actions `feature`~~
 
 Buttons 1, 2, 4, and 5 currently only show a "Button X pressed" notification.
 A settings panel (see BLA-005) or an extended `blaudio_config.json` schema could let users bind
 actions (open mixer, mute a specific slider, etc.) to each unassigned button.
 The commented-out `open_windows_volume_mixer` binding (line 141) is a ready example.
+
+Updated: Buttons are now mappable for slider mute
 
 ### BLA-007 · Single-instance enforcement `feature`
 
@@ -57,13 +59,13 @@ There is a `# TODO: Add a check to see if the app is already running` comment in
 A mutex or socket-based check would prevent this.
 
 
-### BLA-UI-STYLE-1 - Add themes, selectable in Settings
+### ~~BLA-UI-STYLE-1 - Add themes, selectable in Settings~~
 
 With our new web-based UI, we can use CSS and JS to create multiple themes, which the user can switch between.
 The initial theme pack should consist of the current theme, an alternative colour theme, a light theme, and a theme with horizontal sliders instead of vertical.
 The horizontal/vertical sliders can be controlled by another setting if that is more sensible.
 
-### BLA-UI-HARDWAREKNOBDETECT-1
+### ~~BLA-UI-HARDWAREKNOBDETECT-1~~ ✅ DONE
 
 When adding or editing a slider, we should provide a detect knob option. This will allow the user to interact with a knob to select that knob as the knob to tie to this slider.
 Since we are constantly updating values, and sometimes a knob may be between two values, causing noise, we should design this in such a way that it only reacts to clearly intentional knob changes, such as "move knob to min then max" (though with a window in case a knob cannot reach full min or max due to hardware issues)
