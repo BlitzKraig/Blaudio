@@ -5,13 +5,16 @@ Object.assign(window.blaudio, {
 
   _editIndex:          null,
   _pendingButtonIndex: null,   // button_index being configured in the open dialog
+  _pendingKnobIndex:   null,   // knob_index being configured in the open dialog
   _detecting:          false,  // true while waiting for a hardware button press
+  _detectingKnob:      false,  // true while waiting for a hardware knob sweep
 
   // ── Open dialogs ──────────────────────────────────────────────────
 
   async openAddSliderDialog() {
     this._editIndex          = null
     this._pendingButtonIndex = null
+    this._pendingKnobIndex   = null
     await this._populateAndShowDialog(null)
   },
 
@@ -20,6 +23,7 @@ Object.assign(window.blaudio, {
     if (!slider) return
     this._editIndex          = index
     this._pendingButtonIndex = slider.button_index ?? null
+    this._pendingKnobIndex   = slider.knob_index   ?? null
     await this._populateAndShowDialog(slider)
   },
 
@@ -42,13 +46,48 @@ Object.assign(window.blaudio, {
     })
 
     document.getElementById('slider-name').value              = slider ? slider.name : ''
-    document.getElementById('knob-select').value              = slider ? (slider.knob_index ?? -1) : -1
     document.getElementById('dialog-title').textContent       = slider ? 'Edit Slider' : 'Add Slider'
     document.getElementById('dialog-confirm-btn').textContent = slider ? 'Save' : 'Add'
 
+    this._renderKnobDetectRow()
     this._renderButtonDetectRow()
     document.getElementById('overlay').classList.remove('hidden')
     setTimeout(() => document.getElementById('slider-name').focus(), 50)
+  },
+
+  // ── Knob detection ────────────────────────────────────────────────
+
+  _renderKnobDetectRow() {
+    const label = document.getElementById('knob-index-label')
+    const btn   = document.getElementById('knob-detect-btn')
+    if (!label || !btn) return
+    label.textContent = this._pendingKnobIndex !== null
+      ? `Knob ${this._pendingKnobIndex}`
+      : 'None'
+    btn.textContent = this._detectingKnob ? 'Sweep knob…' : 'Detect'
+    btn.classList.toggle('detecting', this._detectingKnob)
+  },
+
+  async _startKnobDetection() {
+    this._detectingKnob = true
+    this._renderKnobDetectRow()
+    await this._apiStartKnobDetection()
+  },
+
+  // Called by api_bridge when Python pushes a 'knob_detected' event.
+  _onKnobDetected(knobIndex) {
+    this._detectingKnob    = false
+    this._pendingKnobIndex = knobIndex
+    this._renderKnobDetectRow()
+  },
+
+  _clearKnobIndex() {
+    if (this._detectingKnob) {
+      this._detectingKnob = false
+      this._apiCancelKnobDetection()
+    }
+    this._pendingKnobIndex = null
+    this._renderKnobDetectRow()
   },
 
   // ── Button detection ──────────────────────────────────────────────
@@ -95,9 +134,14 @@ Object.assign(window.blaudio, {
         this._detecting = false
         this._apiCancelButtonDetection()
       }
+      if (this._detectingKnob) {
+        this._detectingKnob = false
+        this._apiCancelKnobDetection()
+      }
       document.getElementById('overlay').classList.add('hidden')
       this._editIndex          = null
       this._pendingButtonIndex = null
+      this._pendingKnobIndex   = null
     }
   },
 
@@ -106,7 +150,7 @@ Object.assign(window.blaudio, {
     if (!name) { document.getElementById('slider-name').focus(); return }
 
     const appNames    = Array.from(document.querySelectorAll('#app-list input:checked')).map(cb => cb.value)
-    const knobIndex   = parseInt(document.getElementById('knob-select').value)
+    const knobIndex   = this._pendingKnobIndex   !== null ? this._pendingKnobIndex   : -1
     const buttonIndex = this._pendingButtonIndex !== null ? this._pendingButtonIndex : -1
 
     if (this._editIndex !== null) {

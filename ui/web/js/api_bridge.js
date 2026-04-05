@@ -12,6 +12,7 @@ Object.assign(window.blaudio, {
       case 'slider_volume':    this._syncSliderValue(data.index, data.volume);  break
       case 'slider_mute':      this._syncSliderMute(data.index, data.mute);     break
       case 'button_detected':  this._onButtonDetected(data.button_index);       break
+      case 'knob_detected':    this._onKnobDetected(data.knob_index);           break
       case 'notification':     this.showToast(data.message);                   break
       case 'peak_levels':      this._updatePeakMeters(data);                   break
     }
@@ -72,6 +73,14 @@ Object.assign(window.blaudio, {
 
   async _apiCancelButtonDetection() {
     if (window.pywebview) await window.pywebview.api.cancel_button_detection()
+  },
+
+  async _apiStartKnobDetection() {
+    if (window.pywebview) await window.pywebview.api.start_knob_detection()
+  },
+
+  async _apiCancelKnobDetection() {
+    if (window.pywebview) await window.pywebview.api.cancel_knob_detection()
   },
 
   async openMixer() {

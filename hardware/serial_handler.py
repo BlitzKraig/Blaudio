@@ -12,6 +12,9 @@ class SerialHandler:
     circular imports.
     """
 
+    _KNOB_LOW  = 10   # knob must dip to or below this value (0–100 scale)
+    _KNOB_HIGH = 90   # knob must rise to or above this value (0–100 scale)
+
     def __init__(self, config, api):
         """
         Args:
@@ -23,8 +26,10 @@ class SerialHandler:
         self._last_knob_values    = {}
         self._last_button_values  = {}
         self._detection_callback  = None   # set while waiting for a button mapping press
+        self._knob_detection_callback = None  # set while waiting for a knob sweep
+        self._knob_detection_seen     = {}    # knob_index -> {'low': bool, 'high': bool}
 
-    # ── Detection mode ────────────────────────────────────────────────
+    # ── Button detection mode ─────────────────────────────────────────
 
     def start_detection(self, callback):
         """
@@ -37,6 +42,22 @@ class SerialHandler:
     def cancel_detection(self):
         """Cancel detection mode without firing the callback."""
         self._detection_callback = None
+
+    # ── Knob detection mode ───────────────────────────────────────────
+
+    def start_knob_detection(self, callback):
+        """
+        Enter knob-detection mode.  The first knob swept from low (≤_KNOB_LOW)
+        to high (≥_KNOB_HIGH) — or high to low — fires callback(knob_index) and
+        exits detection mode automatically.
+        """
+        self._knob_detection_callback = callback
+        self._knob_detection_seen     = {}
+
+    def cancel_knob_detection(self):
+        """Cancel knob-detection mode without firing the callback."""
+        self._knob_detection_callback = None
+        self._knob_detection_seen     = {}
 
     # ── SerialReader callbacks ────────────────────────────────────────
 
@@ -52,6 +73,19 @@ class SerialHandler:
             if self._last_knob_values.get(knob_index) == knob_value:
                 continue
             self._last_knob_values[knob_index] = knob_value
+
+            if self._knob_detection_callback is not None:
+                seen = self._knob_detection_seen.setdefault(knob_index, {'low': False, 'high': False})
+                if knob_value <= self._KNOB_LOW:
+                    seen['low'] = True
+                if knob_value >= self._KNOB_HIGH:
+                    seen['high'] = True
+                if seen['low'] and seen['high']:
+                    cb = self._knob_detection_callback
+                    self._knob_detection_callback = None
+                    self._knob_detection_seen     = {}
+                    cb(knob_index)
+                continue   # don't apply volume changes while detecting
 
             if master_slider.knob_index == knob_index:
                 self._api._master_volume  = knob_value

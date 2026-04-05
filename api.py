@@ -160,6 +160,16 @@ class Api:
         """Abort an in-progress button detection (e.g. dialog closed)."""
         self._serial_handler.cancel_detection()
 
+    def start_knob_detection(self):
+        """Tell the serial handler to capture the next intentional knob sweep for mapping."""
+        self._serial_handler.start_knob_detection(
+            lambda knob: self._push('knob_detected', {'knob_index': knob})
+        )
+
+    def cancel_knob_detection(self):
+        """Abort an in-progress knob detection (e.g. dialog closed)."""
+        self._serial_handler.cancel_knob_detection()
+
     def reorder_sliders(self, order):
         order = [int(i) for i in order]
         if sorted(order) != list(range(len(self._sliders))):

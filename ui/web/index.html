@@ -85,14 +85,13 @@
     <div id="app-list"></div>
 
     <label>Hardware knob</label>
-    <select id="knob-select" class="dialog-select">
-      <option value="-1">None</option>
-      <option value="0">0</option><option value="1">1</option>
-      <option value="2">2</option><option value="3">3</option>
-      <option value="4">4</option><option value="5">5</option>
-      <option value="6">6</option><option value="7">7</option>
-      <option value="8">8</option>
-    </select>
+    <div class="detect-row">
+      <span id="knob-index-label" class="detect-label">None</span>
+      <button type="button" class="btn-flat detect-btn" id="knob-detect-btn"
+              onclick="blaudio._startKnobDetection()">Detect</button>
+      <button type="button" class="btn-flat" id="knob-clear-btn"
+              onclick="blaudio._clearKnobIndex()">Clear</button>
+    </div>
 
     <label>Hardware mute button</label>
     <div class="detect-row">
