@@ -41,7 +41,7 @@ class Api:
         self._window     = None
         self._visible    = True
         self._force_quit = False
-        self._version    = 'v0.0.7'
+        self._version    = 'v0.1.0'
 
         # ── State ────────────────────────────────────────────────────
         self._sliders       = []
