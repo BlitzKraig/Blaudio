@@ -91,7 +91,8 @@ hardware/
 
 ui/web/
   index.html            Main application window (HTML shell)
-  style.css             Theme system — Dark, Light, Ocean, Synthwave + horizontal layout CSS
+  style.css             Theme system — Dark, Light, Ocean, Synthwave + noUiSlider overrides
+  vendor/               Bundled third-party libraries (noUiSlider 15.8.1)
   app.js                App init, bootstrap, and window.blaudio namespace assembly
   js/
     api_bridge.js       Python → JS event receiver (_receive) and pywebview.api.* wrappers
@@ -241,12 +242,19 @@ To start Blaudio on login, create a shortcut in:
 
 The UI lives entirely in `ui/web/` — plain HTML, CSS, and vanilla JavaScript. No build step, no framework, no tooling required. You can open `ui/web/index.html` directly in any browser to work on the design.
 
+**Bundled vendor libraries** (in `ui/web/vendor/`, no CDN required):
+
+| Library | Version | Purpose |
+| ------- | ------- | ------- |
+| [noUiSlider](https://refreshless.com/nouislider/) | 15.8.1 | Custom range sliders — coloured fill track, styled via CSS custom properties |
+
 ### Files
 
 | File | Purpose |
 | ---- | ------- |
 | `ui/web/index.html` | HTML shell: menubar, master panel, slider area, add-slider dialog, toast |
-| `ui/web/style.css` | Theme system: CSS custom properties for Dark, Light, Ocean, and Synthwave themes |
+| `ui/web/style.css` | Theme system: CSS custom properties for Dark, Light, Ocean, and Synthwave themes; noUiSlider overrides |
+| `ui/web/vendor/` | Bundled third-party libraries (noUiSlider 15.8.1) |
 | `ui/web/app.js` | App init and bootstrap; assembles `window.blaudio` from the modules below |
 | `ui/web/js/api_bridge.js` | `_receive()` event handler and all `pywebview.api.*` call wrappers |
 | `ui/web/js/sliders.js` | Dynamic slider rendering and drag-to-reorder |

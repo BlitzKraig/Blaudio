@@ -4,16 +4,19 @@
 Object.assign(window.blaudio, {
 
   _renderMaster() {
-    const slider  = document.getElementById('master-slider')
-    const muteBtn = document.getElementById('master-mute-btn')
-    const panel   = document.getElementById('master-panel')
-    if (slider)  slider.value = this.state.masterVolume
+    const sliderEl = document.getElementById('master-slider')
+    const muteBtn  = document.getElementById('master-mute-btn')
+    const panel    = document.getElementById('master-panel')
+    if (sliderEl && sliderEl.noUiSlider) sliderEl.noUiSlider.set(this.state.masterVolume)
     if (muteBtn) muteBtn.classList.toggle('active', this.state.masterMute)
     if (panel)   panel.classList.toggle('muted', this.state.masterMute)
-    if (slider)  slider.disabled = this.state.masterMute
+    if (sliderEl && sliderEl.noUiSlider) {
+      if (this.state.masterMute) sliderEl.noUiSlider.disable()
+      else sliderEl.noUiSlider.enable()
+    }
   },
 
-  // Called by the HTML range input (oninput) and scroll wheel handler.
+  // Called by the noUiSlider 'slide' event and scroll wheel handler.
   async setMasterVolume(value) {
     this.state.masterVolume = parseInt(value)
     await this._apiSetMasterVolume(value)
@@ -29,7 +32,7 @@ Object.assign(window.blaudio, {
   _syncMasterSlider(volume) {
     this.state.masterVolume = volume
     const el = document.getElementById('master-slider')
-    if (el) el.value = volume
+    if (el && el.noUiSlider) el.noUiSlider.set(volume)
     const panel = document.getElementById('master-panel')
     if (panel) this._showVolReadout(panel, volume)
   },
@@ -42,12 +45,29 @@ Object.assign(window.blaudio, {
   // ── Interactions (wired up once during init) ──────────────────────
 
   _initMasterInteractions() {
-    const panel  = document.getElementById('master-panel')
-    const slider = document.getElementById('master-slider')
-    if (!panel || !slider) return
+    const panel    = document.getElementById('master-panel')
+    const sliderEl = document.getElementById('master-slider')
+    if (!panel || !sliderEl) return
 
-    slider.addEventListener('input', () => {
-      this._showVolReadout(panel, parseInt(slider.value))
+    const isHorizontal = document.body.classList.contains('layout-horizontal')
+    noUiSlider.create(sliderEl, {
+      start:       [this.state.masterVolume],
+      range:       { min: 0, max: 100 },
+      orientation: isHorizontal ? 'horizontal' : 'vertical',
+      direction:   isHorizontal ? 'ltr' : 'rtl',
+      connect:     [true, false],
+    })
+
+    // Apply initial mute state now that noUiSlider exists.
+    if (this.state.masterMute) sliderEl.noUiSlider.disable()
+
+    // 'slide' only fires on user drag — not on programmatic .set() calls,
+    // so hardware-push syncs don't echo back to Python.
+    sliderEl.noUiSlider.on('slide', (values) => {
+      const val = Math.round(parseFloat(values[0]))
+      this.state.masterVolume = val
+      this._showVolReadout(panel, val)
+      this.setMasterVolume(val)
     })
 
     panel.addEventListener('wheel', e => {
@@ -55,7 +75,7 @@ Object.assign(window.blaudio, {
       const delta  = e.deltaY < 0 ? 2 : -2
       const newVol = Math.min(100, Math.max(0, this.state.masterVolume + delta))
       this.state.masterVolume = newVol
-      slider.value = newVol
+      sliderEl.noUiSlider.set(newVol)
       this.setMasterVolume(newVol)
       this._showVolReadout(panel, newVol)
     }, { passive: false })

@@ -42,6 +42,8 @@ Object.assign(window.blaudio, {
   },
 
   _makeCol(slider, index) {
+    const isHorizontal = document.body.classList.contains('layout-horizontal')
+
     const col = document.createElement('div')
     col.className = `slider-col${slider.mute ? ' muted' : ''}`
     col.dataset.index = index
@@ -53,8 +55,7 @@ Object.assign(window.blaudio, {
           <div class="vu-peak"></div>
         </div>
         <span class="vol-readout"></span>
-        <input type="range" class="vslider" min="0" max="100" value="${slider.volume}"
-               ${slider.mute ? 'disabled' : ''}>
+        <div class="vslider"></div>
       </div>
       <div class="slider-controls">
         <button class="icon-btn mute-btn${slider.mute ? ' active' : ''}" title="Mute"
@@ -65,10 +66,22 @@ Object.assign(window.blaudio, {
                 onclick="blaudio.openEditSliderDialog(${index})">📝</button>
       </div>`
 
-    const rangeInput = col.querySelector('.vslider')
+    const sliderEl = col.querySelector('.vslider')
 
-    rangeInput.addEventListener('input', e => {
-      const val = parseInt(e.target.value)
+    noUiSlider.create(sliderEl, {
+      start:       [slider.volume],
+      range:       { min: 0, max: 100 },
+      orientation: isHorizontal ? 'horizontal' : 'vertical',
+      direction:   isHorizontal ? 'ltr' : 'rtl',
+      connect:     [true, false],
+    })
+
+    if (slider.mute) sliderEl.noUiSlider.disable()
+
+    // 'slide' only fires on user drag — not on programmatic .set() calls,
+    // so hardware-push syncs don't echo back to Python.
+    sliderEl.noUiSlider.on('slide', (values) => {
+      const val = Math.round(parseFloat(values[0]))
       this.state.sliders[index].volume = val
       this.setSliderVolume(index, val)
       this._showVolReadout(col, val)
@@ -80,8 +93,8 @@ Object.assign(window.blaudio, {
       const cur    = this.state.sliders[index]
       if (!cur) return
       const newVol = Math.min(100, Math.max(0, cur.volume + delta))
-      cur.volume       = newVol
-      rangeInput.value = newVol
+      cur.volume = newVol
+      sliderEl.noUiSlider.set(newVol)
       this.setSliderVolume(index, newVol)
       this._showVolReadout(col, newVol)
     }, { passive: false })
@@ -149,8 +162,11 @@ Object.assign(window.blaudio, {
     const col = document.querySelector(`.slider-col[data-index="${index}"]`)
     if (!col) return
     col.classList.toggle('muted', mute)
-    const input = col.querySelector('.vslider')
-    if (input) input.disabled = mute
+    const sliderEl = col.querySelector('.vslider')
+    if (sliderEl && sliderEl.noUiSlider) {
+      if (mute) sliderEl.noUiSlider.disable()
+      else sliderEl.noUiSlider.enable()
+    }
     const btn = col.querySelector('.mute-btn')
     if (btn) btn.classList.toggle('active', mute)
   },
@@ -158,10 +174,10 @@ Object.assign(window.blaudio, {
   // Sync a single slider's value from a Python hardware push event.
   _syncSliderValue(index, volume) {
     if (this.state.sliders[index]) this.state.sliders[index].volume = volume
-    const col   = document.querySelector(`.slider-col[data-index="${index}"]`)
-    const input = col && col.querySelector('.vslider')
-    if (input) input.value = volume
-    if (col)   this._showVolReadout(col, volume)
+    const col     = document.querySelector(`.slider-col[data-index="${index}"]`)
+    const sliderEl = col && col.querySelector('.vslider')
+    if (sliderEl && sliderEl.noUiSlider) sliderEl.noUiSlider.set(volume)
+    if (col) this._showVolReadout(col, volume)
   },
 
 })

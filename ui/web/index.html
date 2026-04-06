@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Blaudio</title>
+  <link rel="stylesheet" href="vendor/nouislider.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -38,9 +39,7 @@
           <div class="vu-peak"></div>
         </div>
         <span class="vol-readout"></span>
-        <input id="master-slider" type="range" class="vslider"
-               min="0" max="100" value="50"
-               oninput="blaudio.setMasterVolume(this.value)">
+        <div id="master-slider" class="vslider"></div>
       </div>
       <div class="slider-controls">
         <button id="master-mute-btn" class="icon-btn mute-btn"
@@ -139,6 +138,7 @@
 </div>
 
 <!-- Load order matters: state must be defined before modules extend it. -->
+<script src="vendor/nouislider.min.js"></script>
 <script src="js/state.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/api_bridge.js"></script>
