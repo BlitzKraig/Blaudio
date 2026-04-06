@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 import webview
 from api import Api
 from tray import Tray
@@ -15,13 +16,20 @@ if __name__ == '__main__':
 
     api = Api()
 
-    # TODO: Save window size and position
+    try:
+        with open(os.path.join(base_path, 'ui_settings.json')) as f:
+            geom = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        geom = {}
+
     window = webview.create_window(
         'Blaudio',
         os.path.join(base_path, 'ui', 'web', 'index.html'),
         js_api=api,
-        width=800,
-        height=600,
+        width=geom.get('window_width', 800),
+        height=geom.get('window_height', 600),
+        x=geom.get('window_x'),
+        y=geom.get('window_y'),
         min_size=(300, 300),
         background_color='#1a1a1a',
     )
@@ -31,6 +39,10 @@ if __name__ == '__main__':
     def on_closing():
         if api._force_quit:
             return True
+        api.save_ui_setting('window_x', window.x, push=False)
+        api.save_ui_setting('window_y', window.y, push=False)
+        api.save_ui_setting('window_width', window.width, push=False)
+        api.save_ui_setting('window_height', window.height, push=False)
         api.hide_window()
         return False
 

@@ -105,14 +105,15 @@ class Api:
             'layout':       self._ui_settings.get('layout', 'vertical'),
         }
 
-    def save_ui_setting(self, key, value):
+    def save_ui_setting(self, key, value, push=True):
         self._ui_settings[key] = value
         try:
             with open(self._ui_settings_path, 'w') as f:
                 json.dump(self._ui_settings, f, indent=2)
         except Exception:
             pass
-        self._push('settings_changed', {'key': key, 'value': value})
+        if push:
+            self._push('settings_changed', {'key': key, 'value': value})
 
     def set_master_volume(self, value):
         ensure_com()
