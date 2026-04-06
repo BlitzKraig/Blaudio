@@ -80,7 +80,7 @@ tray.py                 System tray icon (pystray) with show/hide/quit menu
 blaudio_config.json     Runtime config (COM port, button/knob assignments, baud rate)
 blaudio.spec            PyInstaller build spec for creating standalone exe
 tasks.py                Invoke tasks (start, buildEXE, bump)
-version.txt             Version info for PyInstaller (currently v0.1.1)
+version.txt             Version info for PyInstaller (currently v0.1.2)
 
 audio/
   audio_controller.py   Wraps pycaw to control master volume/mute and per-app volumes
@@ -273,7 +273,7 @@ The UI lives entirely in `ui/web/` — plain HTML, CSS, and vanilla JavaScript. 
 ```javascript
 // js/state.js — edit this to change the design preview data
 const MOCK_STATE = {
-  version: 'v0.1.1',
+  version: 'v0.1.2',
   masterVolume: 50,
   masterMute: false,
   sliders: [
@@ -382,7 +382,7 @@ The `ui/web/` directory is self-contained. To replace the UI with a different fr
 
 ## Current Status
 
-**Version:** 0.1.1 (early development)
+**Version:** 0.1.2 (early development)
 
 **Known limitations:**
 

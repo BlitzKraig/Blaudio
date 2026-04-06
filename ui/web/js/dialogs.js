@@ -12,6 +12,8 @@ Object.assign(window.blaudio, {
   // ── Open dialogs ──────────────────────────────────────────────────
 
   async openAddSliderDialog() {
+    if (window.pywebview) { await this._apiOpenDialogWindow(-1); return }
+    // Browser / mock mode: use the in-page overlay.
     this._editIndex          = null
     this._pendingButtonIndex = null
     this._pendingKnobIndex   = null
@@ -19,6 +21,8 @@ Object.assign(window.blaudio, {
   },
 
   async openEditSliderDialog(index) {
+    if (window.pywebview) { await this._apiOpenDialogWindow(index); return }
+    // Browser / mock mode: use the in-page overlay.
     const slider = this.state.sliders[index]
     if (!slider) return
     this._editIndex          = index

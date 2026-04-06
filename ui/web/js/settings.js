@@ -14,7 +14,9 @@ Object.assign(window.blaudio, {
     { id: 'synthwave', label: 'Synthwave', bg: '#0a0010', accent: '#e040fb' },
   ],
 
-  openSettings() {
+  async openSettings() {
+    if (window.pywebview) { await this._apiOpenSettingsWindow(); return }
+    // Browser / mock mode: use the in-page overlay.
     this._renderThemePicker()
     this._renderLayoutPicker()
     this._renderPortDetection()

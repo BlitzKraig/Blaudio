@@ -15,12 +15,13 @@ if __name__ == '__main__':
 
     api = Api()
 
+    # TODO: Save window size and position
     window = webview.create_window(
         'Blaudio',
         os.path.join(base_path, 'ui', 'web', 'index.html'),
         js_api=api,
-        width=1400,
-        height=800,
+        width=800,
+        height=600,
         min_size=(300, 300),
         background_color='#1a1a1a',
     )

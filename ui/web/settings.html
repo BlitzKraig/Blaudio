@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Settings</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ── Popup-window layout overrides ─────────────────────────────── */
+    /* The overlay becomes a plain full-size container; the dialog fills it. */
+    body { margin: 0; overflow: hidden; }
+
+    #settings-overlay {
+      position: static !important;
+      background: none !important;
+      width: 100%;
+      min-height: 100vh;
+      align-items: flex-start !important;
+      justify-content: stretch !important;
+    }
+    #settings-overlay.hidden { display: none !important; }
+
+    #settings-dialog {
+      width: 100% !important;
+      max-width: none !important;
+      max-height: 100vh !important;
+      border-radius: 0 !important;
+      border-left: none !important;
+      border-right: none !important;
+      border-top: none !important;
+      border-bottom: none !important;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+
+<div id="settings-overlay" class="hidden">
+  <div id="settings-dialog">
+    <h3>Settings</h3>
+
+    <label>Theme</label>
+    <div id="theme-picker"><!-- populated by popup_settings.js --></div>
+
+    <label>Slider layout</label>
+    <div id="layout-picker">
+      <button class="layout-opt" data-layout="vertical" onclick="blaudio.setLayout('vertical')">
+        <span class="layout-preview layout-preview-v"><i></i><i></i><i></i></span>
+        Vertical
+      </button>
+      <button class="layout-opt" data-layout="horizontal" onclick="blaudio.setLayout('horizontal')">
+        <span class="layout-preview layout-preview-h"><i></i><i></i><i></i></span>
+        Horizontal
+      </button>
+    </div>
+
+    <label>Device</label>
+    <div id="port-detect-section"><!-- populated by popup_settings.js --></div>
+
+    <div class="dialog-actions">
+      <button class="btn-accent" onclick="blaudio.closeSettings()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="js/state.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/api_bridge.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/popup_settings.js"></script>
+</body>
+</html>

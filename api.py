@@ -3,6 +3,7 @@ import sys
 import json
 import time
 import threading
+import webview
 
 from audio.audio_controller import ensure_com, AudioController
 from audio.peak_meter import PeakMeter
@@ -39,10 +40,12 @@ class Api:
         except (FileNotFoundError, json.JSONDecodeError):
             self._ui_settings = {}
 
-        self._window     = None
+        self._window             = None
+        self._popup_window       = None
+        self._pending_edit_index = -1
         self._visible    = True
         self._force_quit = False
-        self._version    = 'v0.1.1'
+        self._version    = 'v0.1.2'
 
         # ── State ────────────────────────────────────────────────────
         self._sliders       = []
@@ -109,6 +112,7 @@ class Api:
                 json.dump(self._ui_settings, f, indent=2)
         except Exception:
             pass
+        self._push('settings_changed', {'key': key, 'value': value})
 
     def set_master_volume(self, value):
         ensure_com()
@@ -137,6 +141,7 @@ class Api:
         slider = Slider(name, list(app_names), 50, knob_index=knob, button_index=btn)
         self.add_slider(slider)
         self._slider_data.save(should_notify=False)
+        self._push('sliders_changed', {'sliders': [s.serialize() for s in self._sliders]})
         return slider.serialize()
 
     def edit_slider(self, index, name, app_names, knob_index, button_index):
@@ -151,12 +156,13 @@ class Api:
         slider.knob_index            = knob
         slider.button_index          = btn
         self._slider_data.save(should_notify=False)
+        self._push('sliders_changed', {'sliders': [s.serialize() for s in self._sliders]})
         return slider.serialize()
 
     def start_button_detection(self):
         """Tell the serial handler to capture the next button press for mapping."""
         self._serial_handler.start_detection(
-            lambda btn: self._push('button_detected', {'button_index': btn})
+            lambda btn: self._push_popup('button_detected', {'button_index': btn})
         )
 
     def cancel_button_detection(self):
@@ -166,7 +172,7 @@ class Api:
     def start_knob_detection(self):
         """Tell the serial handler to capture the next intentional knob sweep for mapping."""
         self._serial_handler.start_knob_detection(
-            lambda knob: self._push('knob_detected', {'knob_index': knob})
+            lambda knob: self._push_popup('knob_detected', {'knob_index': knob})
         )
 
     def cancel_knob_detection(self):
@@ -227,9 +233,9 @@ class Api:
         self._serial_reader.resume_from_detection()
 
         if result[0]:
-            self._push('port_detected', {'port': result[0]})
+            self._push_popup('port_detected', {'port': result[0]})
         else:
-            self._push('port_detection_failed', {})
+            self._push_popup('port_detection_failed', {})
 
     def save_com_port(self, port):
         """Persist a new COM port to blaudio_config.json and reconnect."""
@@ -315,6 +321,63 @@ class Api:
                 self.slider_object = obj
         return _Shim(self._master_slider)
 
+    # ── Popup window management ──────────────────────────────────────
+
+    def open_dialog_window(self, edit_index=-1):
+        """Open the Add/Edit Slider dialog in a dedicated popup window."""
+        self._pending_edit_index = int(edit_index)
+        if self._popup_window:
+            try:
+                self._popup_window.focus()
+                return
+            except Exception:
+                self._popup_window = None
+        title = 'Edit Slider' if int(edit_index) >= 0 else 'Add Slider'
+        url   = os.path.join(self._app_path, 'ui', 'web', 'dialog.html')
+        self._popup_window = webview.create_window(
+            title, url, js_api=self,
+            width=420, height=500,
+            resizable=False,
+            background_color='#1a1a1a',
+        )
+
+    def open_settings_window(self):
+        """Open the Settings panel in a dedicated popup window."""
+        if self._popup_window:
+            try:
+                self._popup_window.focus()
+                return
+            except Exception:
+                self._popup_window = None
+        url = os.path.join(self._app_path, 'ui', 'web', 'settings.html')
+        self._popup_window = webview.create_window(
+            'Settings', url, js_api=self,
+            width=420, height=458,
+            resizable=False,
+            background_color='#1a1a1a',
+        )
+
+    def get_popup_context(self):
+        """Called by a popup window on load to get its initial state."""
+        ctx = {
+            'editIndex': self._pending_edit_index,
+            'theme':     self._ui_settings.get('theme',  'dark'),
+            'layout':    self._ui_settings.get('layout', 'vertical'),
+        }
+        if 0 <= self._pending_edit_index < len(self._sliders):
+            ctx['slider'] = self._sliders[self._pending_edit_index].serialize()
+        return ctx
+
+    def close_popup_window(self):
+        """Called from popup JS to close itself cleanly."""
+        if self._popup_window:
+            win = self._popup_window
+            self._popup_window = None
+            try:
+                win.destroy()
+            except Exception:
+                pass
+
     # ── Push events to JS ────────────────────────────────────────────
 
     def _push(self, event, data=None):
@@ -323,6 +386,18 @@ class Api:
         try:
             payload = json.dumps({'event': event, 'data': data or {}})
             self._window.evaluate_js(
+                f'window.blaudio && window.blaudio._receive({payload})'
+            )
+        except Exception:
+            pass
+
+    def _push_popup(self, event, data=None):
+        """Push an event to the popup window only (e.g. hardware detection results)."""
+        if not self._popup_window:
+            return
+        try:
+            payload = json.dumps({'event': event, 'data': data or {}})
+            self._popup_window.evaluate_js(
                 f'window.blaudio && window.blaudio._receive({payload})'
             )
         except Exception:

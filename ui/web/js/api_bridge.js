@@ -17,6 +17,25 @@ Object.assign(window.blaudio, {
       case 'port_detection_failed': this._onPortDetectionFailed();              break
       case 'notification':          this.showToast(data.message);               break
       case 'peak_levels':      this._updatePeakMeters(data);                   break
+      case 'sliders_changed':  this._onSlidersChanged(data.sliders);           break
+      case 'settings_changed': this._onSettingsChanged(data.key, data.value);  break
+    }
+  },
+
+  // Called when a popup window creates/edits a slider — sync main window state.
+  _onSlidersChanged(sliders) {
+    this.state.sliders = sliders
+    this._renderSliders()
+  },
+
+  // Called when a popup window saves a UI setting — sync main window appearance.
+  _onSettingsChanged(key, value) {
+    if (key === 'theme') {
+      this._applyTheme(value)
+    } else if (key === 'layout') {
+      this._applyLayout(value)
+      this._renderSliders()
+      this._initMasterInteractions()
     }
   },
 
@@ -96,6 +115,14 @@ Object.assign(window.blaudio, {
 
   async _apiSaveComPort(port) {
     if (window.pywebview) await window.pywebview.api.save_com_port(port)
+  },
+
+  async _apiOpenDialogWindow(editIndex) {
+    if (window.pywebview) await window.pywebview.api.open_dialog_window(editIndex ?? -1)
+  },
+
+  async _apiOpenSettingsWindow() {
+    if (window.pywebview) await window.pywebview.api.open_settings_window()
   },
 
   async openMixer() {
