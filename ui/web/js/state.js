@@ -2,7 +2,7 @@
 
 // ── Mock state for browser-only development ──────────────────────────────────
 const MOCK_STATE = {
-  version: 'v0.1.0',
+  version: 'v0.1.1',
   masterVolume: 50,
   masterMute: false,
   sliders: [
