@@ -4,6 +4,7 @@ import json
 import time
 import threading
 import webview
+from screeninfo import get_monitors
 
 from audio.audio_controller import ensure_com, AudioController
 from audio.peak_meter import PeakMeter
@@ -11,6 +12,22 @@ from hardware.serial_handler import SerialHandler
 from slider_data import SliderData
 from serial_reader import SerialReader
 from slider import Slider
+
+
+def screen_center_x(width):
+    monitors = get_monitors()
+    if monitors:
+        m = monitors[0]
+        return (m.width - width) // 2 + m.x
+    return 100
+
+
+def screen_center_y(height):
+    monitors = get_monitors()
+    if monitors:
+        m = monitors[0]
+        return (m.height - height) // 2 + m.y
+    return 100
 
 
 class Api:
@@ -359,6 +376,7 @@ class Api:
         self._popup_window = webview.create_window(
             title, url, js_api=self,
             width=420, height=500,
+            x=screen_center_x(420), y=screen_center_y(500),
             resizable=False,
             background_color='#1a1a1a',
         )
@@ -374,7 +392,8 @@ class Api:
         url = os.path.join(self._app_path, 'ui', 'web', 'settings.html')
         self._popup_window = webview.create_window(
             'Settings', url, js_api=self,
-            width=420, height=458,
+            width=420, height=500,
+            x=screen_center_x(420), y=screen_center_y(500),
             resizable=False,
             background_color='#1a1a1a',
         )

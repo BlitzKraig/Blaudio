@@ -7,3 +7,4 @@ comtypes==1.4.2
 numpy==1.26.4
 invoke==2.2.0
 pyinstaller==6.7.0
+screeninfo==0.8.1
