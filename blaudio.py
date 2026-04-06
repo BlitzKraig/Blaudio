@@ -35,6 +35,9 @@ if __name__ == '__main__':
         y=ui_settings.get(f'{prefix}y'),
         min_size=(300, 300),
         background_color='#1a1a1a',
+        frameless=True,
+        on_top=True,
+        easy_drag=False
     )
 
     api.set_window(window)

@@ -13,6 +13,7 @@ Object.assign(window.blaudio, {
     this._renderMaster()
     this._renderSliders()
     this._initMasterInteractions()
+    this._wmInit()
   },
 
   about() {

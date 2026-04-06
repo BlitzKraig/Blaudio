@@ -72,6 +72,42 @@ body {
 }
 .menu-entry:hover { background: rgba(255,255,255,0.07); }
 
+#menubar-drag {
+  flex: 1;
+  cursor: grab;
+}
+#menubar-drag.dragging { cursor: grabbing; }
+
+#menubar-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 12px;
+  height: 100%;
+  line-height: 1;
+  transition: background var(--ease), color var(--ease);
+}
+#menubar-close:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* ── Resize handles (frameless window) ──────────────────────────── */
+.resize-handle {
+  position: fixed;
+  z-index: 9999;
+}
+.resize-handle[data-dir="n"]  { top: 0;      left: 6px;    right: 6px;   height: 4px;  cursor: n-resize;  }
+.resize-handle[data-dir="s"]  { bottom: 0;   left: 6px;    right: 6px;   height: 4px;  cursor: s-resize;  }
+.resize-handle[data-dir="e"]  { right: 0;    top: 6px;     bottom: 6px;  width: 4px;   cursor: e-resize;  }
+.resize-handle[data-dir="w"]  { left: 0;     top: 6px;     bottom: 6px;  width: 4px;   cursor: w-resize;  }
+.resize-handle[data-dir="ne"] { top: 0;      right: 0;     width: 8px;   height: 8px;  cursor: ne-resize; }
+.resize-handle[data-dir="nw"] { top: 0;      left: 0;      width: 8px;   height: 8px;  cursor: nw-resize; }
+.resize-handle[data-dir="se"] { bottom: 0;   right: 0;     width: 8px;   height: 8px;  cursor: se-resize; }
+.resize-handle[data-dir="sw"] { bottom: 0;   left: 0;      width: 8px;   height: 8px;  cursor: sw-resize; }
+
 .menu-drop {
   display: none;
   position: absolute;

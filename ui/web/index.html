@@ -16,6 +16,7 @@
       <div class="menu-drop">
         <button class="menu-action" onclick="blaudio.openSettings()">Settings</button>
         <div class="menu-sep"></div>
+        <button class="menu-action" onclick="blaudio.hideWindow()">Minimize</button>
         <button class="menu-action" onclick="blaudio.quit()">Quit</button>
       </div>
     </div>
@@ -25,7 +26,19 @@
         <button class="menu-action" onclick="blaudio.about()">About</button>
       </div>
     </div>
+    <div id="menubar-drag"></div>
+    <button id="menubar-close" onclick="blaudio.hideWindow()" title="Minimise to tray">✕</button>
   </nav>
+
+  <!-- ── Resize handles ──────────────────────────────────────────────── -->
+  <div class="resize-handle" data-dir="n"></div>
+  <div class="resize-handle" data-dir="ne"></div>
+  <div class="resize-handle" data-dir="e"></div>
+  <div class="resize-handle" data-dir="se"></div>
+  <div class="resize-handle" data-dir="s"></div>
+  <div class="resize-handle" data-dir="sw"></div>
+  <div class="resize-handle" data-dir="w"></div>
+  <div class="resize-handle" data-dir="nw"></div>
 
   <!-- ── Mixer ────────────────────────────────────────────────── -->
   <main id="mixer">
@@ -151,6 +164,7 @@
 <script src="js/sliders.js"></script>
 <script src="js/dialogs.js"></script>
 <script src="js/settings.js"></script>
+<script src="js/window_manager.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

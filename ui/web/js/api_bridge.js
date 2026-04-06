@@ -125,6 +125,19 @@ Object.assign(window.blaudio, {
     if (window.pywebview) await window.pywebview.api.open_settings_window()
   },
 
+  async _apiGetWindowGeometry() {
+    if (window.pywebview) return await window.pywebview.api.get_window_geometry()
+    return { x: 100, y: 100, width: 800, height: 600 }
+  },
+
+  async _apiMoveWindow(x, y) {
+    if (window.pywebview) await window.pywebview.api.move_window(x, y)
+  },
+
+  async _apiSetWindowGeometry(x, y, w, h) {
+    if (window.pywebview) await window.pywebview.api.set_window_geometry(x, y, w, h)
+  },
+
   async openMixer() {
     if (window.pywebview) await window.pywebview.api.open_mixer()
   },
@@ -132,5 +145,9 @@ Object.assign(window.blaudio, {
   async quit() {
     if (window.pywebview) await window.pywebview.api.quit()
   },
+
+  async hideWindow() {
+    if (window.pywebview) await window.pywebview.api.hide_window()
+  }
 
 })

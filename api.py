@@ -325,6 +325,21 @@ class Api:
             self._window.show()
             self._visible = True
 
+    def get_window_geometry(self):
+        if self._window:
+            return {'x': self._window.x, 'y': self._window.y,
+                    'width': self._window.width, 'height': self._window.height}
+        return {'x': 0, 'y': 0, 'width': 800, 'height': 600}
+
+    def move_window(self, x, y):
+        if self._window:
+            self._window.move(int(x), int(y))
+
+    def set_window_geometry(self, x, y, w, h):
+        if self._window:
+            self._window.move(int(x), int(y))
+            self._window.resize(int(w), int(h))
+
     def hide_window(self):
         if self._window:
             self._window.hide()
@@ -364,13 +379,13 @@ class Api:
 
     def open_dialog_window(self, edit_index=-1):
         """Open the Add/Edit Slider dialog in a dedicated popup window."""
-        self._pending_edit_index = int(edit_index)
-        if self._popup_window:
+        if self._popup_window is not None and self._popup_window in webview.windows:
             try:
                 self._popup_window.focus()
-                return
             except Exception:
-                self._popup_window = None
+                pass
+            return
+        self._pending_edit_index = int(edit_index)
         title = 'Edit Slider' if int(edit_index) >= 0 else 'Add Slider'
         url   = os.path.join(self._app_path, 'ui', 'web', 'dialog.html')
         self._popup_window = webview.create_window(
@@ -379,23 +394,25 @@ class Api:
             x=screen_center_x(420), y=screen_center_y(500),
             resizable=False,
             background_color='#1a1a1a',
+            frameless=True
         )
 
     def open_settings_window(self):
         """Open the Settings panel in a dedicated popup window."""
-        if self._popup_window:
+        if self._popup_window is not None and self._popup_window in webview.windows:
             try:
                 self._popup_window.focus()
-                return
             except Exception:
-                self._popup_window = None
+                pass
+            return
         url = os.path.join(self._app_path, 'ui', 'web', 'settings.html')
         self._popup_window = webview.create_window(
             'Settings', url, js_api=self,
-            width=420, height=500,
-            x=screen_center_x(420), y=screen_center_y(500),
+            width=420, height=458,
+            x=screen_center_x(420), y=screen_center_y(458),
             resizable=False,
             background_color='#1a1a1a',
+            frameless=True
         )
 
     def get_popup_context(self):
