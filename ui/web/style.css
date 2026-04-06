@@ -362,10 +362,13 @@ body.layout-horizontal .vu-peak {
 }
 .vol-readout.visible { opacity: 1; }
 
-/* ── Drag-to-reorder ────────────────────────────────────────────── */
-.slider-label         { cursor: grab; }
-.slider-label:active  { cursor: grabbing; }
-.slider-col.dragging  { opacity: 0.25; cursor: grabbing; }
+/* ── Drag-to-reorder (Sortable.js) ──────────────────────────────── */
+.slider-label          { cursor: grab; }
+.slider-label:active   { cursor: grabbing; }
+/* chosenClass — the item following the cursor */
+.slider-col.dragging   { opacity: 0.35; cursor: grabbing; }
+/* ghostClass — invisible placeholder; other items animate around it */
+.slider-col.slider-ghost { opacity: 0 !important; }
 
 /* ── Slider controls ────────────────────────────────────────────── */
 .slider-controls {

@@ -92,7 +92,7 @@ hardware/
 ui/web/
   index.html            Main application window (HTML shell)
   style.css             Theme system — Dark, Light, Ocean, Synthwave + noUiSlider overrides
-  vendor/               Bundled third-party libraries (noUiSlider 15.8.1)
+  vendor/               Bundled third-party libraries (noUiSlider 15.8.1, Sortable.js 1.15.6)
   app.js                App init, bootstrap, and window.blaudio namespace assembly
   js/
     api_bridge.js       Python → JS event receiver (_receive) and pywebview.api.* wrappers
@@ -247,6 +247,7 @@ The UI lives entirely in `ui/web/` — plain HTML, CSS, and vanilla JavaScript. 
 | Library | Version | Purpose |
 | ------- | ------- | ------- |
 | [noUiSlider](https://refreshless.com/nouislider/) | 15.8.1 | Custom range sliders — coloured fill track, styled via CSS custom properties |
+| [Sortable.js](https://sortablejs.github.io/Sortable/) | 1.15.6 | Animated drag-to-reorder for slider columns — spring-eased "make room" transitions |
 
 ### Files
 
@@ -257,7 +258,7 @@ The UI lives entirely in `ui/web/` — plain HTML, CSS, and vanilla JavaScript. 
 | `ui/web/vendor/` | Bundled third-party libraries (noUiSlider 15.8.1) |
 | `ui/web/app.js` | App init and bootstrap; assembles `window.blaudio` from the modules below |
 | `ui/web/js/api_bridge.js` | `_receive()` event handler and all `pywebview.api.*` call wrappers |
-| `ui/web/js/sliders.js` | Dynamic slider rendering and drag-to-reorder |
+| `ui/web/js/sliders.js` | Dynamic slider rendering; Sortable.js drag-to-reorder with animated transitions |
 | `ui/web/js/dialogs.js` | Add/Edit slider modals and hardware button detection UI |
 | `ui/web/js/settings.js` | Theme and layout picker; persists choices to server and localStorage |
 | `ui/web/js/master_slider.js` | Master volume control and mute button interactions |

@@ -3,42 +3,43 @@
 // Dynamic per-app sliders: rendering, interactions, and drag-to-reorder.
 Object.assign(window.blaudio, {
 
-  _dragMoved:          false,
-  _draggingCol:        null,
-  _containerDragover:  null,
+  _sortable: null,
 
   _renderSliders() {
     const container = document.getElementById('sliders-container')
     if (!container) return
 
-    // Remove stale delegated dragover listener before rebuilding DOM.
-    if (this._containerDragover) {
-      container.removeEventListener('dragover', this._containerDragover)
+    // Tear down previous Sortable instance before rebuilding the DOM.
+    if (this._sortable) {
+      this._sortable.destroy()
+      this._sortable = null
     }
 
     container.innerHTML = ''
     this.state.sliders.forEach((slider, i) => container.appendChild(this._makeCol(slider, i)))
 
-    // Single delegated dragover for the whole container.
-    // Catches events from any depth of children so the cursor never "misses".
-    this._containerDragover = e => {
-      const src = this._draggingCol
-      if (!src) return
-      e.preventDefault()
-      e.dataTransfer.dropEffect = 'move'
-      const targetCol = e.target.closest('.slider-col')
-      if (!targetCol || targetCol === src) return
-      const rect   = targetCol.getBoundingClientRect()
-      const before = document.body.classList.contains('layout-horizontal')
-        ? e.clientY < rect.top  + rect.height / 2
-        : e.clientX < rect.left + rect.width  / 2
-      const ref = before ? targetCol : targetCol.nextSibling
-      if (src.nextSibling !== ref) {
-        container.insertBefore(src, ref)
-        this._dragMoved = true
-      }
-    }
-    container.addEventListener('dragover', this._containerDragover)
+    const isHorizontal = document.body.classList.contains('layout-horizontal')
+
+    this._sortable = Sortable.create(container, {
+      handle:      '.slider-label',
+      animation:   200,
+      easing:      'cubic-bezier(0.25, 1, 0.5, 1)',
+      direction:   isHorizontal ? 'vertical' : 'horizontal',
+      chosenClass: 'dragging',     // reuses existing opacity/cursor CSS
+      ghostClass:  'slider-ghost', // invisible placeholder; items animate around it
+      onEnd: (evt) => {
+        if (evt.oldIndex === evt.newIndex) return
+        // data-index values still reflect the pre-drag state indices — read them
+        // from the DOM (Sortable has already moved the elements) to derive the
+        // new order, then hand off to Python.
+        const cols = Array.from(container.querySelectorAll('.slider-col'))
+        const newOrder = cols.map(col => parseInt(col.dataset.index))
+        this.state.sliders = newOrder.map(i => this.state.sliders[i])
+        // Defer re-render so Sortable finishes its own cleanup first.
+        setTimeout(() => this._renderSliders(), 0)
+        this._apiReorderSliders(newOrder)
+      },
+    })
   },
 
   _makeCol(slider, index) {
@@ -99,45 +100,7 @@ Object.assign(window.blaudio, {
       this._showVolReadout(col, newVol)
     }, { passive: false })
 
-    this._attachDragHandlers(col, index)
     return col
-  },
-
-  // draggable is on the label (the handle), not the whole column.
-  _attachDragHandlers(col, index) {
-    const label = col.querySelector('.slider-label')
-    label.draggable = true
-
-    label.addEventListener('dragstart', e => {
-      this._draggingCol = col
-      this._dragMoved   = false
-      col.classList.add('dragging')
-      e.dataTransfer.effectAllowed = 'move'
-      e.dataTransfer.setData('text/plain', String(index))
-      const r = col.getBoundingClientRect()
-      e.dataTransfer.setDragImage(col, e.clientX - r.left, e.clientY - r.top)
-    })
-
-    label.addEventListener('dragend', e => {
-      col.classList.remove('dragging')
-      this._draggingCol = null
-      if (this._dragMoved && e.dataTransfer.dropEffect !== 'none') {
-        this._commitDragOrder()
-      } else if (this._dragMoved) {
-        // Drag cancelled (ESC) after a partial DOM move — restore original order.
-        this._renderSliders()
-      }
-    })
-  },
-
-  async _commitDragOrder() {
-    const container = document.getElementById('sliders-container')
-    if (!container) return
-    const domOrder = Array.from(container.querySelectorAll('.slider-col'))
-      .map(el => parseInt(el.dataset.index))
-    this.state.sliders = domOrder.map(i => this.state.sliders[i])
-    this._renderSliders()
-    await this._apiReorderSliders(domOrder)
   },
 
   async setSliderVolume(index, value) {
@@ -174,7 +137,7 @@ Object.assign(window.blaudio, {
   // Sync a single slider's value from a Python hardware push event.
   _syncSliderValue(index, volume) {
     if (this.state.sliders[index]) this.state.sliders[index].volume = volume
-    const col     = document.querySelector(`.slider-col[data-index="${index}"]`)
+    const col      = document.querySelector(`.slider-col[data-index="${index}"]`)
     const sliderEl = col && col.querySelector('.vslider')
     if (sliderEl && sliderEl.noUiSlider) sliderEl.noUiSlider.set(volume)
     if (col) this._showVolReadout(col, volume)
