@@ -106,14 +106,35 @@ class Api:
         }
 
     def save_ui_setting(self, key, value, push=True):
+        old_layout = self._ui_settings.get('layout') if key == 'layout' else None
         self._ui_settings[key] = value
         try:
             with open(self._ui_settings_path, 'w') as f:
                 json.dump(self._ui_settings, f, indent=2)
         except Exception:
             pass
+        if old_layout is not None and old_layout != value and self._window:
+            self._on_layout_change(old_layout, value)
         if push:
             self._push('settings_changed', {'key': key, 'value': value})
+
+    def _on_layout_change(self, old_layout, new_layout):
+        prefix_old = f'{old_layout}_window_'
+        prefix_new = f'{new_layout}_window_'
+        self._ui_settings[f'{prefix_old}x'] = self._window.x
+        self._ui_settings[f'{prefix_old}y'] = self._window.y
+        self._ui_settings[f'{prefix_old}width'] = self._window.width
+        self._ui_settings[f'{prefix_old}height'] = self._window.height
+        with open(self._ui_settings_path, 'w') as f:
+            json.dump(self._ui_settings, f, indent=2)
+        new_x = self._ui_settings.get(f'{prefix_new}x')
+        new_y = self._ui_settings.get(f'{prefix_new}y')
+        new_width = self._ui_settings.get(f'{prefix_new}width')
+        new_height = self._ui_settings.get(f'{prefix_new}height')
+        if new_x is not None and new_y is not None:
+            self._window.move(new_x, new_y)
+        if new_width is not None and new_height is not None:
+            self._window.resize(new_width, new_height)
 
     def set_master_volume(self, value):
         ensure_com()

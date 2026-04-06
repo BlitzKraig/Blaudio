@@ -18,18 +18,21 @@ if __name__ == '__main__':
 
     try:
         with open(os.path.join(base_path, 'ui_settings.json')) as f:
-            geom = json.load(f)
+            ui_settings = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        geom = {}
+        ui_settings = {}
+
+    layout = ui_settings.get('layout', 'vertical')
+    prefix = f'{layout}_window_'
 
     window = webview.create_window(
         'Blaudio',
         os.path.join(base_path, 'ui', 'web', 'index.html'),
         js_api=api,
-        width=geom.get('window_width', 800),
-        height=geom.get('window_height', 600),
-        x=geom.get('window_x'),
-        y=geom.get('window_y'),
+        width=ui_settings.get(f'{prefix}width', 800),
+        height=ui_settings.get(f'{prefix}height', 600),
+        x=ui_settings.get(f'{prefix}x'),
+        y=ui_settings.get(f'{prefix}y'),
         min_size=(300, 300),
         background_color='#1a1a1a',
     )
@@ -39,10 +42,17 @@ if __name__ == '__main__':
     def on_closing():
         if api._force_quit:
             return True
-        api.save_ui_setting('window_x', window.x, push=False)
-        api.save_ui_setting('window_y', window.y, push=False)
-        api.save_ui_setting('window_width', window.width, push=False)
-        api.save_ui_setting('window_height', window.height, push=False)
+        current_layout = api._ui_settings.get('layout', 'vertical')
+        prefix = f'{current_layout}_window_'
+        api._ui_settings[f'{prefix}x'] = window.x
+        api._ui_settings[f'{prefix}y'] = window.y
+        api._ui_settings[f'{prefix}width'] = window.width
+        api._ui_settings[f'{prefix}height'] = window.height
+        try:
+            with open(os.path.join(base_path, 'ui_settings.json'), 'w') as f:
+                json.dump(api._ui_settings, f, indent=2)
+        except Exception:
+            pass
         api.hide_window()
         return False
 
