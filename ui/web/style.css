@@ -399,6 +399,8 @@ body.layout-horizontal .vu-peak {
 }
 .icon-btn.mute-btn.active { color: var(--danger); }
 
+.hidden-btn { visibility: hidden; }
+
 /* ── Toolbar ────────────────────────────────────────────────────── */
 #toolbar {
   height: 44px;
@@ -705,17 +707,20 @@ body.layout-horizontal .slider-wrapper {
   container-type: inline-size;
 }
 
-/* Horizontal slider wrapper: let noUiSlider fill the available width */
+/* Horizontal slider: full width, explicit 4px height so noUiSlider renders correctly.
+   (height:auto would have higher specificity and collapse the track to nothing.) */
 body.layout-horizontal .vslider {
   width: 100%;
-  height: auto;
+  height: 4px;
 }
 
-/* Controls: inline, no top margin */
+/* Controls: inline, no top margin; width:auto overrides the base width:100% which
+   would otherwise consume the full row width and leave 0px for the slider. */
 body.layout-horizontal .slider-controls {
   margin-top: 0;
   margin-left: 4px;
   flex-wrap: nowrap;
+  width: auto;
 }
 
 /* Scroll: vertical */

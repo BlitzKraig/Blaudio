@@ -3,6 +3,8 @@
 // Master volume panel — rendering, interactions, and sync from hardware/Python.
 Object.assign(window.blaudio, {
 
+  _masterWheelAbort: null,
+
   _renderMaster() {
     const sliderEl = document.getElementById('master-slider')
     const muteBtn  = document.getElementById('master-mute-btn')
@@ -42,12 +44,19 @@ Object.assign(window.blaudio, {
     this._renderMaster()
   },
 
-  // ── Interactions (wired up once during init) ──────────────────────
+  // ── Interactions — safe to call multiple times (e.g. on layout change) ───
 
   _initMasterInteractions() {
     const panel    = document.getElementById('master-panel')
     const sliderEl = document.getElementById('master-slider')
     if (!panel || !sliderEl) return
+
+    // Destroy any existing instance before (re-)creating (e.g. layout switch).
+    if (sliderEl.noUiSlider) sliderEl.noUiSlider.destroy()
+
+    // Remove the previous wheel listener via AbortController so it doesn't pile up.
+    if (this._masterWheelAbort) this._masterWheelAbort.abort()
+    this._masterWheelAbort = new AbortController()
 
     const isHorizontal = document.body.classList.contains('layout-horizontal')
     noUiSlider.create(sliderEl, {
@@ -78,7 +87,7 @@ Object.assign(window.blaudio, {
       sliderEl.noUiSlider.set(newVol)
       this.setMasterVolume(newVol)
       this._showVolReadout(panel, newVol)
-    }, { passive: false })
+    }, { passive: false, signal: this._masterWheelAbort.signal })
   },
 
 })

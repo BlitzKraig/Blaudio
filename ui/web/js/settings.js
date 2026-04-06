@@ -38,6 +38,10 @@ Object.assign(window.blaudio, {
     this._applyLayout(layout)
     localStorage.setItem('blaudio-layout', layout)  // fallback for browser testing
     this._apiSaveUiSetting('layout', layout)
+    // Sliders and master must be re-initialized: noUiSlider orientation is
+    // baked in at creation time and cannot be changed by CSS alone.
+    this._renderSliders()
+    this._initMasterInteractions()
     this._renderLayoutPicker()
   },
 

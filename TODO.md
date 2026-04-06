@@ -23,9 +23,6 @@ Updated README to reference `slider_data.json` and `master_slider_data.json`.
 `blaudio.py` reads the same dicts in `on_serial_update()` on the Qt thread.
 No lock or thread-safe structure is used — could cause a race condition under load.
 
-### BLA-UI-HORZSLIDERBUG1
-
-Horizontal slider UI is incorrect. It requires a rewrite.
 
 ---
 
