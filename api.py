@@ -42,6 +42,14 @@ class Api:
       - Pushes server-side events back to the JS UI
     """
 
+    _ADVANCED_SETTING_SCHEMA = {
+        'AUTO_SAVE_INTERVAL':  (30,    3600,  int),
+        'SMOOTHING_WINDOW':    (1,     50,    int),
+        'CALLBACK_INTERVAL':   (0.005, 2,   float),
+        'KNOB_DETECTION_LOW':  (0,     49,    int),
+        'KNOB_DETECTION_HIGH': (50,    100,   int),
+    }
+
     def __init__(self):
         if getattr(sys, 'frozen', False):
             self._app_path = os.path.dirname(sys.executable)
@@ -52,6 +60,12 @@ class Api:
 
         with open(os.path.join(self._app_path, 'blaudio_config.json')) as f:
             self.config = json.load(f)
+
+        self.config.setdefault('AUTO_SAVE_INTERVAL', 300)
+        self.config.setdefault('SMOOTHING_WINDOW',    10)
+        self.config.setdefault('CALLBACK_INTERVAL',   0.02)
+        self.config.setdefault('KNOB_DETECTION_LOW',  10)
+        self.config.setdefault('KNOB_DETECTION_HIGH', 90)
 
         self._ui_settings_path = os.path.join(self._app_path, 'ui_settings.json')
         try:
@@ -114,6 +128,8 @@ class Api:
             baudrate=self.config['BAUD_RATE'],
             callback=self._serial_handler.on_serial_update,
             message_callback=self._serial_handler.on_message,
+            callback_interval=self.config['CALLBACK_INTERVAL'],
+            smoothing_window=self.config['SMOOTHING_WINDOW'],
         )
 
     def set_tray(self, tray):
@@ -312,6 +328,37 @@ class Api:
             json.dump(self.config, f, indent=4)
         self._serial_reader.reconnect(port)
 
+    def save_advanced_setting(self, key, value):
+        """Persist and live-apply one of the tunable advanced constants."""
+        schema = self._ADVANCED_SETTING_SCHEMA.get(key)
+        if schema is None:
+            return False
+        lo, hi, cast = schema
+        try:
+            value = max(lo, min(hi, cast(value)))
+        except (TypeError, ValueError):
+            return False
+        self.config[key] = value
+        config_path = os.path.join(self._app_path, 'blaudio_config.json')
+        with open(config_path, 'w') as f:
+            json.dump(self.config, f, indent=4)
+        if key == 'AUTO_SAVE_INTERVAL':
+            if self._save_timer:
+                self._save_timer.cancel()
+            self._schedule_save()
+        elif key == 'SMOOTHING_WINDOW':
+            self._serial_reader.smoothing_window = value
+            self._serial_reader.knob_buffers = {}
+        elif key == 'CALLBACK_INTERVAL':
+            self._serial_reader.callback_interval = value
+        elif key == 'KNOB_DETECTION_LOW':
+            self._serial_handler._KNOB_LOW = value
+        elif key == 'KNOB_DETECTION_HIGH':
+            self._serial_handler._KNOB_HIGH = value
+        self._push('advanced_setting_changed', {'key': key, 'value': value})
+        self._push_popup('advanced_setting_changed', {'key': key, 'value': value})
+        return True
+
     def reorder_sliders(self, order):
         order = [int(i) for i in order]
         if sorted(order) != list(range(len(self._sliders))):
@@ -479,10 +526,37 @@ class Api:
             'layout':        self._ui_settings.get('layout', 'vertical'),
             'version':       self._version,
             'pendingUpdate': self._pending_update,
+            'advancedSettings': {
+                'autoSaveInterval':  self.config['AUTO_SAVE_INTERVAL'],
+                'smoothingWindow':   self.config['SMOOTHING_WINDOW'],
+                'callbackInterval':  self.config['CALLBACK_INTERVAL'],
+                'knobDetectionLow':  self.config['KNOB_DETECTION_LOW'],
+                'knobDetectionHigh': self.config['KNOB_DETECTION_HIGH'],
+            },
         }
         if 0 <= self._pending_edit_index < len(self._sliders):
             ctx['slider'] = self._sliders[self._pending_edit_index].serialize()
         return ctx
+
+    def open_advanced_window(self):
+        """Open the Advanced Settings panel, closing any existing popup first."""
+        if self._popup_window is not None:
+            win = self._popup_window
+            self._popup_window = None
+            try:
+                win.destroy()
+            except Exception:
+                pass
+        url = os.path.join(self._ui_path, 'ui', 'web', 'advanced.html')
+        self._popup_window = webview.create_window(
+            'Advanced Settings', url, js_api=self,
+            width=460, height=580,
+            x=screen_center_x(460), y=screen_center_y(580),
+            resizable=False,
+            background_color='#1a1a1a',
+            frameless=True,
+            on_top=True
+        )
 
     def close_popup_window(self):
         """Called from popup JS to close itself cleanly."""
@@ -527,6 +601,7 @@ class Api:
         self._schedule_save()
 
     def _schedule_save(self):
-        self._save_timer = threading.Timer(300, self._auto_save)
+        interval = self.config.get('AUTO_SAVE_INTERVAL', 300)
+        self._save_timer = threading.Timer(interval, self._auto_save)
         self._save_timer.daemon = True
         self._save_timer.start()

@@ -206,6 +206,11 @@ Object.assign(window.blaudio, {
     setTimeout(() => this._apiInstallUpdate(), 300)
   },
 
+  async openAdvancedSettings() {
+    if (window.pywebview) await this._apiOpenAdvancedWindow()
+    else window.open('advanced.html', '_blank')
+  },
+
   _renderPortDetection() {
     const el = document.getElementById('port-detect-section')
     if (!el) return

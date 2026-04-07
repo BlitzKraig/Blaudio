@@ -23,6 +23,8 @@ class SerialHandler:
         """
         self._config              = config
         self._api                 = api
+        self._KNOB_LOW  = config.get('KNOB_DETECTION_LOW',  self._KNOB_LOW)
+        self._KNOB_HIGH = config.get('KNOB_DETECTION_HIGH', self._KNOB_HIGH)
         self._last_knob_values    = {}
         self._last_button_values  = {}
         self._detection_callback  = None   # set while waiting for a button mapping press

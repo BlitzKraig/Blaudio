@@ -65,16 +65,13 @@ Since we are constantly updating values, and sometimes a knob may be between two
 
 ## Improvements
 
-### BLA-008 · Centralise magic constants `improvement`
+### ~~BLA-008 · Centralise magic constants~~ ✅ DONE
 
-Several values are hardcoded across files with no easy way for users to tune them:
-
-- Auto-save interval: `300` s (`api.py` autosave timer)
-- Smoothing window: `10` samples (`serial_reader.py` default arg)
-- Callback interval: `0.02` s (`serial_reader.py` default arg)
-- Knob detection thresholds: `_KNOB_LOW = 10`, `_KNOB_HIGH = 90` (`hardware/serial_handler.py`)
-
-These belong either in a `constants.py` module or in the user-facing settings (see BLA-005).
+All five constants moved to `blaudio_config.json` with `setdefault` fallbacks in `api.py` for
+existing installs. An **Advanced** section in the Settings panel exposes them as live-editable
+number inputs; changes are validated, saved to `blaudio_config.json`, and applied immediately
+without restart (`SerialReader` attributes patched in-place, save timer rescheduled, knob
+detection thresholds updated on the `SerialHandler` instance).
 
 ### ~~BLA-009 · Extract duplicate audio session logic~~ ✅ DONE
 

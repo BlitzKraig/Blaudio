@@ -22,7 +22,8 @@ Object.assign(window.blaudio, {
       case 'update_available': this._onUpdateAvailable(data);                  break
       case 'update_progress':  this._onUpdateProgress(data);                   break
       case 'update_complete':  this._onUpdateComplete();                        break
-      case 'update_error':     this._onUpdateError(data);                       break
+      case 'update_error':          this._onUpdateError(data);                              break
+      case 'advanced_setting_changed': if (this._onAdvancedSettingChanged) this._onAdvancedSettingChanged(data.key, data.value); break
     }
   },
 
@@ -132,6 +133,14 @@ Object.assign(window.blaudio, {
 
   async _apiSaveUiSetting(key, value) {
     if (window.pywebview) window.pywebview.api.save_ui_setting(key, value)
+  },
+
+  async _apiSaveAdvancedSetting(key, value) {
+    if (window.pywebview) return await window.pywebview.api.save_advanced_setting(key, value)
+  },
+
+  async _apiOpenAdvancedWindow() {
+    if (window.pywebview) await window.pywebview.api.open_advanced_window()
   },
 
   async _apiStartButtonDetection() {
