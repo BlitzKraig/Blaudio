@@ -44,8 +44,10 @@ class Api:
     def __init__(self):
         if getattr(sys, 'frozen', False):
             self._app_path = os.path.dirname(sys.executable)
+            self._ui_path  = sys._MEIPASS          # bundled ui/web/ lives here
         else:
             self._app_path = os.path.dirname(os.path.abspath(__file__))
+            self._ui_path  = self._app_path        # dev: ui/web/ is next to api.py
 
         with open(os.path.join(self._app_path, 'blaudio_config.json')) as f:
             self.config = json.load(f)
@@ -387,14 +389,15 @@ class Api:
             return
         self._pending_edit_index = int(edit_index)
         title = 'Edit Slider' if int(edit_index) >= 0 else 'Add Slider'
-        url   = os.path.join(self._app_path, 'ui', 'web', 'dialog.html')
+        url   = os.path.join(self._ui_path, 'ui', 'web', 'dialog.html')
         self._popup_window = webview.create_window(
             title, url, js_api=self,
             width=420, height=500,
             x=screen_center_x(420), y=screen_center_y(500),
             resizable=False,
             background_color='#1a1a1a',
-            frameless=True
+            frameless=True,
+            on_top=True
         )
 
     def open_settings_window(self):
@@ -405,14 +408,15 @@ class Api:
             except Exception:
                 pass
             return
-        url = os.path.join(self._app_path, 'ui', 'web', 'settings.html')
+        url = os.path.join(self._ui_path, 'ui', 'web', 'settings.html')
         self._popup_window = webview.create_window(
             'Settings', url, js_api=self,
             width=420, height=458,
             x=screen_center_x(420), y=screen_center_y(458),
             resizable=False,
             background_color='#1a1a1a',
-            frameless=True
+            frameless=True,
+            on_top=True
         )
 
     def get_popup_context(self):
