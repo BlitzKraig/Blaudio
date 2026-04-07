@@ -44,10 +44,11 @@ COM port override, and other options accessible from the tray icon.
 Buttons are now mappable to slider mute actions via the Edit Slider dialog.
 Unassigned buttons show a notification prompting the user to map them.
 
-### BLA-007 · Single-instance enforcement `feature`
+### ~~BLA-007 · Single-instance enforcement~~ ✅ DONE
 
-Launching a second instance silently competes for the serial port and save files.
-A mutex or socket-based check in `blaudio.py` would prevent this.
+`single_instance.py` binds a localhost TCP socket (port 34714) as the instance lock.
+A second launch connects to that socket, sends a `show` command, and exits immediately.
+The first instance's listener thread calls `api.show_window()` on receipt.
 
 
 ### ~~BLA-UI-STYLE-1 · Add themes, selectable in Settings~~ ✅ DONE

@@ -4,9 +4,18 @@ import json
 import webview
 from api import Api
 from tray import Tray
+import single_instance
 
 
 if __name__ == '__main__':
+    # ── Single-instance enforcement ───────────────────────────────────────
+    # Try to acquire the lock socket.  If another instance already holds it,
+    # signal that instance to show its window and exit immediately.
+    _instance_lock = single_instance.try_acquire()
+    if _instance_lock is None:
+        single_instance.signal_existing()
+        sys.exit(0)
+
     if getattr(sys, 'frozen', False):
         base_path    = sys._MEIPASS
         start_hidden = True
@@ -41,6 +50,9 @@ if __name__ == '__main__':
     )
 
     api.set_window(window)
+
+    # Start listening for "show" signals from any future second-instance launch.
+    single_instance.start_listener(_instance_lock, api.show_window)
 
     def on_closing():
         if api._force_quit:
