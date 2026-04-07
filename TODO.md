@@ -10,8 +10,8 @@ Items are identified by `BLA-XXX`. Reference an ID directly to have it worked on
 
 ### BLA-001 · Version mismatch `bug`
 
-`blaudio.py` hardcodes `v0.0.3` (line 103) but `version.txt` and the README both state `0.0.7`.
-The version string should be read from a single source of truth (e.g. `version.txt`).
+`api.py` hardcodes the version string (e.g. `v0.1.2`) in the `Api` constructor instead of reading
+from `version.txt`. The version string should be read from a single source of truth (`version.txt`).
 
 ### ~~BLA-002 · README still references pickle files~~ ✅ DONE
 
@@ -19,48 +19,41 @@ Updated README to reference `slider_data.json` and `master_slider_data.json`.
 
 ### BLA-003 · Thread safety on serial data `bug`
 
-`serial_reader.py` writes to `self.knobs` and `self.buttons` from a daemon thread.
-`blaudio.py` reads the same dicts in `on_serial_update()` on the Qt thread.
-No lock or thread-safe structure is used - could cause a race condition under load.
+`serial_reader.py` writes to `self.knobs` and `self.buttons` from the `read_from_port` daemon thread
+with no lock or thread-safe structure. The callback is called synchronously on that same thread so
+normal operation is safe, but a reconnect can spawn a new `read_from_port` thread while
+`_connection_loop` is still running, giving two threads concurrent access to those dicts.
 
 
 ---
 
 ## Features
 
-### ~~BLA-004 · Edit slider functionality `feature`~~
+### ~~BLA-004 · Edit slider functionality `feature`~~ ✅ DONE
 
-The Edit button on each slider fires a "coming soon" notification (line 227).
-Should open a dialog pre-populated with the slider's current name, apps, and knob assignment,
-matching the existing Create Slider dialog flow.
+Edit button opens `dialog.html` pre-populated with the slider's current name, apps, knob
+assignment, and button mapping - matching the Create Slider dialog flow.
 
-### ~~BLA-005 · Settings menu `feature`~~
+### ~~BLA-005 · Settings menu `feature`~~ ✅ DONE
 
-`ui.actionSettings.setEnabled(False)` (line 101) - the menu item exists but does nothing.
-Candidates for a settings panel: auto-save interval, smoothing window size, notification duration,
-COM port override without editing JSON directly.
+Settings panel implemented in `ui/web/js/settings.js` with theme selection, layout toggle,
+COM port override, and other options accessible from the tray icon.
 
-### ~~BLA-006 · Configurable button actions `feature`~~
+### ~~BLA-006 · Configurable button actions `feature`~~ ✅ DONE
 
-Buttons 1, 2, 4, and 5 currently only show a "Button X pressed" notification.
-A settings panel (see BLA-005) or an extended `blaudio_config.json` schema could let users bind
-actions (open mixer, mute a specific slider, etc.) to each unassigned button.
-The commented-out `open_windows_volume_mixer` binding (line 141) is a ready example.
-
-Updated: Buttons are now mappable for slider mute
+Buttons are now mappable to slider mute actions via the Edit Slider dialog.
+Unassigned buttons show a notification prompting the user to map them.
 
 ### BLA-007 · Single-instance enforcement `feature`
 
-There is a `# TODO: Add a check to see if the app is already running` comment in `__main__`
-(line 343). Launching a second instance silently competes for the serial port and save files.
-A mutex or socket-based check would prevent this.
+Launching a second instance silently competes for the serial port and save files.
+A mutex or socket-based check in `blaudio.py` would prevent this.
 
 
-### ~~BLA-UI-STYLE-1 - Add themes, selectable in Settings~~
+### ~~BLA-UI-STYLE-1 · Add themes, selectable in Settings~~ ✅ DONE
 
-With our new web-based UI, we can use CSS and JS to create multiple themes, which the user can switch between.
-The initial theme pack should consist of the current theme, an alternative colour theme, a light theme, and a theme with horizontal sliders instead of vertical.
-The horizontal/vertical sliders can be controlled by another setting if that is more sensible.
+Four themes implemented (`dark`, `light`, `ocean`, `synthwave`) via CSS custom property blocks in
+`style.css` and a theme picker in `js/settings.js`. Horizontal layout is a separate setting.
 
 ### ~~BLA-UI-HARDWAREKNOBDETECT-1~~ ✅ DONE
 
@@ -75,20 +68,17 @@ Since we are constantly updating values, and sometimes a knob may be between two
 
 Several values are hardcoded across files with no easy way for users to tune them:
 
-- Auto-save interval: `300000` ms (`blaudio.py` line 59)
-- Notification display duration: `2000` ms (`blaudio.py` line 262)
-- Fade animation duration: `300` / `1000` ms (`blaudio.py` lines 270, 278)
-- Smoothing window: `10` samples (`serial_reader.py` line 11)
-- Callback interval: `0.02` s (`serial_reader.py` line 11)
+- Auto-save interval: `300` s (`api.py` autosave timer)
+- Smoothing window: `10` samples (`serial_reader.py` default arg)
+- Callback interval: `0.02` s (`serial_reader.py` default arg)
+- Knob detection thresholds: `_KNOB_LOW = 10`, `_KNOB_HIGH = 90` (`hardware/serial_handler.py`)
 
 These belong either in a `constants.py` module or in the user-facing settings (see BLA-005).
 
-### BLA-009 · Extract duplicate audio session logic `improvement`
+### ~~BLA-009 · Extract duplicate audio session logic~~ ✅ DONE
 
-`toggle_mute()` and `change_volume()` (lines 283–329) both iterate `AudioUtilities.GetAllSessions()`
-with identical branching for Master / All Unassigned / named app.
-Extracting a shared `apply_to_sessions(slider_object, fn)` helper would halve the duplicated code
-and make future audio changes a single edit.
+Audio control is now centralised in `AudioController` (`audio/audio_controller.py`). `api.py` delegates
+to `_audio.apply_slider_mute/volume()` - no duplicated session iteration.
 
 ### BLA-010 · Replace numpy with stdlib for smoothing `improvement`
 
@@ -109,18 +99,16 @@ Debug output uses `print()` throughout (`serial_reader.py`, `blaudio.py`).
 Using Python's `logging` module would allow log levels, optional file output, and cleaner
 production behaviour in the packaged exe.
 
-### BLA-013 · Performance: pre-build knob→slider lookup `improvement`
+### ~~BLA-013 · Performance: pre-build knob→slider lookup~~ ✅ DONE
 
-`on_serial_update()` iterates all knobs × all sliders on every callback (tagged with
-`# TODO: Improve the performance of this` on line 119).
-Building a `{knob_index: slider_object}` dict whenever sliders are added or removed
-would reduce this to O(knobs) per callback.
+`on_serial_update()` in `hardware/serial_handler.py` checks the master slider first (O(1)), then
+short-circuits to a per-slider loop only when needed. The `# TODO` comment is gone and the
+old all-knobs×all-sliders iteration has been replaced.
 
-### BLA-014 · Bare `except` in serial connect `improvement`
+### ~~BLA-014 · Bare `except` in serial connect~~ ✅ DONE
 
-`serial_reader.py` line 51 uses a bare `except: pass` when closing the port before reconnect.
-Should be `except serial.SerialException` (or at minimum `except Exception`) so unexpected
-errors are not silently swallowed.
+All bare `except:` clauses in `serial_reader.py` have been replaced with `except Exception:`.
+Could be narrowed further to `serial.SerialException` but no longer silently swallows all exceptions.
 
 ### ~~BLA-UI-REF1 · Current UI design tooling is untenable~~ ✅ DONE
 
@@ -138,23 +126,22 @@ restores the original order. Works in both vertical and horizontal layout modes.
 ### BLA-UI-SLIDERINTERACT-1
 
 Sliders with an attached hardware knob should not be interactable in the UI, as this causes UI jumping.
+`sliders.js` already disables the noUiSlider element when `slider.mute` is true, so the disable
+mechanism exists - it just needs to also trigger when `slider.knob_index` is set.
 
 ---
 
 ## Housekeeping
 
-### BLA-015 · Add `requirements.txt` `housekeeping`
+### ~~BLA-015 · Add `requirements.txt`~~ ✅ DONE
 
-There is no `requirements.txt` or `pyproject.toml`. New contributors must guess dependencies.
-Should pin at minimum: `pywebview`, `pystray`, `Pillow`, `pycaw`, `pyserial`, `comtypes`,
-`numpy`, `invoke`, `PyInstaller`.
+`requirements.txt` exists and lists all runtime dependencies.
 
 ### ~~BLA-016 · Add `.ui` source files to version control~~ ✅ SUPERSEDED
 
 Resolved by BLA-UI-REF1 migration. `ui/web/` files are plain HTML/CSS/JS committed directly.
 
-### BLA-017 · Knob count in Create Slider dialog is hardcoded `housekeeping`
+### ~~BLA-017 · Knob count in Create Slider dialog is hardcoded~~ ✅ DONE
 
-The knob dropdown in `create_slider()` hardcodes `range(0, 9)` (line 178), regardless of
-how many knobs the hardware actually has. It should read from config or match the
-hardware's reported knob count.
+Resolved by BLA-UI-HARDWAREKNOBDETECT-1. The dialog now uses a hardware detect button
+(`_startKnobDetection()`) instead of a hardcoded dropdown range.
