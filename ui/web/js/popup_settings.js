@@ -45,6 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
         window.blaudio._renderUpdateSection()
       }
       document.getElementById('settings-overlay').classList.remove('hidden')
+      requestAnimationFrame(() => {
+        if (window.pywebview)
+          window.pywebview.api.resize_popup_to_fit(document.getElementById('settings-dialog').offsetHeight)
+      })
     })
   }
 

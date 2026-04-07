@@ -48,7 +48,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // _populateAndShowDialog fetches running apps, populates the form,
       // and removes 'hidden' from #overlay (which in popup mode is just a container).
-      window.blaudio._populateAndShowDialog(slider)
+      window.blaudio._populateAndShowDialog(slider).then(() => {
+        requestAnimationFrame(() => {
+          if (window.pywebview)
+            window.pywebview.api.resize_popup_to_fit(document.getElementById('dialog').offsetHeight)
+        })
+      })
     })
   }
 

@@ -487,6 +487,7 @@ class Api:
                 pass
             return
         self._pending_edit_index = int(edit_index)
+        self._popup_width = 420
         title = 'Edit Slider' if int(edit_index) >= 0 else 'Add Slider'
         url   = os.path.join(self._ui_path, 'ui', 'web', 'dialog.html')
         self._popup_window = webview.create_window(
@@ -507,6 +508,7 @@ class Api:
             except Exception:
                 pass
             return
+        self._popup_width = 420
         url = os.path.join(self._ui_path, 'ui', 'web', 'settings.html')
         self._popup_window = webview.create_window(
             'Settings', url, js_api=self,
@@ -547,11 +549,12 @@ class Api:
                 win.destroy()
             except Exception:
                 pass
+        self._popup_width = 460
         url = os.path.join(self._ui_path, 'ui', 'web', 'advanced.html')
         self._popup_window = webview.create_window(
             'Advanced Settings', url, js_api=self,
-            width=460, height=580,
-            x=screen_center_x(460), y=screen_center_y(580),
+            width=self._popup_width, height=500,
+            x=screen_center_x(self._popup_width), y=screen_center_y(500),
             resizable=False,
             background_color='#1a1a1a',
             frameless=True,
@@ -567,6 +570,15 @@ class Api:
                 win.destroy()
             except Exception:
                 pass
+
+    def resize_popup_to_fit(self, height):
+        """Called from popup JS after content renders; resizes and re-centres."""
+        if not self._popup_window:
+            return
+        height = int(height)
+        width  = getattr(self, '_popup_width', 420)
+        self._popup_window.resize(width, height)
+        self._popup_window.move(screen_center_x(width), screen_center_y(height))
 
     # ── Push events to JS ────────────────────────────────────────────
 

@@ -125,6 +125,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ctx.advancedSettings) window.blaudio._advancedSettings = ctx.advancedSettings
         window.blaudio._renderAdvancedSection()
         document.getElementById('settings-overlay').classList.remove('hidden')
+        requestAnimationFrame(() => {
+          window.pywebview.api.resize_popup_to_fit(document.getElementById('settings-dialog').offsetHeight)
+        })
       })
     } else {
       window.blaudio._renderAdvancedSection()
