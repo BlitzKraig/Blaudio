@@ -13,7 +13,7 @@ class PeakMeter:
 
     # Re-enumerate audio sessions every 2 s to pick up new/closed apps.
     SESSION_REFRESH_INTERVAL = 2.0
-    # Poll interval — 20 fps is smooth without stressing the CPU.
+    # Poll interval - 20 fps is smooth without stressing the CPU.
     # TODO: Make this configurable in settings. Also allow turning off meter.
     POLL_INTERVAL = 0.05
 
@@ -42,7 +42,7 @@ class PeakMeter:
         try:
             CoInitialize()
         except OSError:
-            pass  # Already initialised on this thread — fine
+            pass  # Already initialised on this thread - fine
         master_meter    = self._init_master_meter()
         cached_sessions = []
         last_refresh    = 0.0

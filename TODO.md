@@ -1,4 +1,4 @@
-# Blaudio — TODO
+# Blaudio - TODO
 
 Items are identified by `BLA-XXX`. Reference an ID directly to have it worked on.
 
@@ -21,7 +21,7 @@ Updated README to reference `slider_data.json` and `master_slider_data.json`.
 
 `serial_reader.py` writes to `self.knobs` and `self.buttons` from a daemon thread.
 `blaudio.py` reads the same dicts in `on_serial_update()` on the Qt thread.
-No lock or thread-safe structure is used — could cause a race condition under load.
+No lock or thread-safe structure is used - could cause a race condition under load.
 
 
 ---
@@ -36,7 +36,7 @@ matching the existing Create Slider dialog flow.
 
 ### ~~BLA-005 · Settings menu `feature`~~
 
-`ui.actionSettings.setEnabled(False)` (line 101) — the menu item exists but does nothing.
+`ui.actionSettings.setEnabled(False)` (line 101) - the menu item exists but does nothing.
 Candidates for a settings panel: auto-save interval, smoothing window size, notification duration,
 COM port override without editing JSON directly.
 
@@ -125,7 +125,7 @@ errors are not silently swallowed.
 ### ~~BLA-UI-REF1 · Current UI design tooling is untenable~~ ✅ DONE
 
 Migrated from PySide6 + QML to **PyWebView + pystray**. UI lives in `ui/web/` as plain
-HTML/CSS/vanilla JS — open `index.html` directly in any browser for design work (mock state
+HTML/CSS/vanilla JS - open `index.html` directly in any browser for design work (mock state
 provided). No Qt, no kit setup, no code generation. `PySide6` replaced by `pywebview`,
 `pystray`, and `Pillow`.
 

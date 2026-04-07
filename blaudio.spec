@@ -4,7 +4,7 @@ from PyInstaller.utils.hooks import collect_all
 # Collect everything pywebview needs: Python modules, data files (JS bridge,
 # .NET WebView2 host assemblies, DLLs), and hidden imports.  Without this,
 # pywebview's Edge WebView2 backend falls back silently and the JS bridge
-# never initialises — evaluate_js always throws "Main window failed to start"
+# never initialises - evaluate_js always throws "Main window failed to start"
 # and window.pywebview.api is never defined in JS.
 webview_datas, webview_binaries, webview_hiddenimports = collect_all('webview')
 
@@ -17,13 +17,13 @@ a = Analysis(
         'pystray._win32',
         'PIL.Image',
         'PIL.IcoImagePlugin',
-        # pycaw / comtypes — COM audio interfaces used throughout the app
+        # pycaw / comtypes - COM audio interfaces used throughout the app
         'pycaw',
         'pycaw.pycaw',
         'comtypes',
         'comtypes.client',
         'comtypes.automation',
-        # pyserial — port enumeration for device detection
+        # pyserial - port enumeration for device detection
         'serial.tools.list_ports',
         'serial.tools',
     ] + webview_hiddenimports,

@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window.blaudio._renderPortDetection()
       window.blaudio.state.version = ctx.version || ''
       if (ctx.pendingUpdate) {
-        // Update was already found — skip the idle state and go straight to ready.
+        // Update was already found - skip the idle state and go straight to ready.
         window.blaudio._onUpdateAvailable(ctx.pendingUpdate)
       } else {
         window.blaudio._renderUpdateSection()

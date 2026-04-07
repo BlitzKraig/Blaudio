@@ -29,7 +29,7 @@ Object.assign(window.blaudio, {
       ghostClass:  'slider-ghost', // invisible placeholder; items animate around it
       onEnd: (evt) => {
         if (evt.oldIndex === evt.newIndex) return
-        // data-index values still reflect the pre-drag state indices — read them
+        // data-index values still reflect the pre-drag state indices - read them
         // from the DOM (Sortable has already moved the elements) to derive the
         // new order, then hand off to Python.
         const cols = Array.from(container.querySelectorAll('.slider-col'))
@@ -79,7 +79,7 @@ Object.assign(window.blaudio, {
 
     if (slider.mute) sliderEl.noUiSlider.disable()
 
-    // 'slide' only fires on user drag — not on programmatic .set() calls,
+    // 'slide' only fires on user drag - not on programmatic .set() calls,
     // so hardware-push syncs don't echo back to Python.
     sliderEl.noUiSlider.on('slide', (values) => {
       const val = Math.round(parseFloat(values[0]))

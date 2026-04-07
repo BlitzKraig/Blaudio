@@ -1,6 +1,6 @@
 'use strict';
 
-// VU meter visualisation — peak bar animation and peak-hold tick logic.
+// VU meter visualisation - peak bar animation and peak-hold tick logic.
 Object.assign(window.blaudio, {
 
   // Keyed by slider index (or 'master'). Each entry: { value, timer }.

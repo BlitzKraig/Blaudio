@@ -1,6 +1,6 @@
 'use strict';
 
-// Master volume panel — rendering, interactions, and sync from hardware/Python.
+// Master volume panel - rendering, interactions, and sync from hardware/Python.
 Object.assign(window.blaudio, {
 
   _masterWheelAbort: null,
@@ -44,7 +44,7 @@ Object.assign(window.blaudio, {
     this._renderMaster()
   },
 
-  // ── Interactions — safe to call multiple times (e.g. on layout change) ───
+  // ── Interactions - safe to call multiple times (e.g. on layout change) ───
 
   _initMasterInteractions() {
     const panel    = document.getElementById('master-panel')
@@ -70,7 +70,7 @@ Object.assign(window.blaudio, {
     // Apply initial mute state now that noUiSlider exists.
     if (this.state.masterMute) sliderEl.noUiSlider.disable()
 
-    // 'slide' only fires on user drag — not on programmatic .set() calls,
+    // 'slide' only fires on user drag - not on programmatic .set() calls,
     // so hardware-push syncs don't echo back to Python.
     sliderEl.noUiSlider.on('slide', (values) => {
       const val = Math.round(parseFloat(values[0]))

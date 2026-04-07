@@ -67,7 +67,7 @@ if __name__ == '__main__':
     if start_hidden:
         # Hide only after the page has fully loaded so WebView2 finishes
         # initialising its JS bridge.  Hiding during on_shown (before load)
-        # permanently breaks evaluate_js — even after the window is shown again.
+        # permanently breaks evaluate_js - even after the window is shown again.
         window.events.loaded += lambda: api.hide_window()
 
     def on_shown():
@@ -77,5 +77,5 @@ if __name__ == '__main__':
 
     # webview.start() returns once the window has been destroyed (i.e. the user
     # quit).  The pystray icon runs on a non-daemon thread, so we must stop it
-    # explicitly — otherwise the process hangs even though the window is gone.
+    # explicitly - otherwise the process hangs even though the window is gone.
     tray.stop()

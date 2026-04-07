@@ -25,7 +25,7 @@ def bump(c, version):
         text = open(path, encoding='utf-8').read()
         new_text, n = re.subn(pattern, replacement, text, flags=flags)
         if n == 0:
-            print(f"  WARNING: no match in {path!r} — pattern may need updating")
+            print(f"  WARNING: no match in {path!r} - pattern may need updating")
         else:
             open(path, 'w', encoding='utf-8').write(new_text)
             print(f"  {path}")

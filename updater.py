@@ -40,16 +40,16 @@ def _is_newer(remote_tag: str, current_tag: str) -> bool:
 class Updater:
     """
     Handles all update lifecycle:
-      check_async()            — background version check
-      download_and_install()   — background download + exe-swap script
-      cancel_download()        — abort in-progress download
+      check_async()            - background version check
+      download_and_install()   - background download + exe-swap script
+      cancel_download()        - abort in-progress download
     """
 
     def __init__(self, current_version: str, app_exe_path: str, on_event):
         """
         current_version : e.g. 'v0.1.2'
         app_exe_path    : absolute path to the running .exe (sys.executable when frozen)
-        on_event        : callable(event: str, data: dict) — relays events to JS
+        on_event        : callable(event: str, data: dict) - relays events to JS
         """
         self._current_version  = current_version
         self._app_exe_path     = app_exe_path
@@ -109,7 +109,7 @@ class Updater:
                     'download_url': asset['browser_download_url'],
                     'size':         asset['size'],
                 })
-            # else: already up to date — silent
+            # else: already up to date - silent
 
         except urllib.error.URLError:
             self._on_event('update_error', {'reason': 'network'})
@@ -158,7 +158,7 @@ class Updater:
             if self._cancel_download:
                 return
 
-            # All bytes written — stage the replacement script and signal JS.
+            # All bytes written - stage the replacement script and signal JS.
             # JS will call install_update() which quits the process; the script
             # waits for that, then moves the new exe over the old one and relaunches.
             self._on_event('update_progress', {
@@ -186,7 +186,7 @@ class Updater:
         """
         current_pid  = os.getpid()
         target_path  = self._app_exe_path
-        # Use single-quoted PS strings — safe for paths with spaces.
+        # Use single-quoted PS strings - safe for paths with spaces.
         script = f"""\
 $pidToWait = {current_pid}
 $source    = '{tmp_path}'

@@ -16,7 +16,7 @@ Object.assign(window.blaudio, {
   },
 
   // After confirm, Python pushes 'sliders_changed' to the main window so it
-  // re-renders.  We just close the popup — no local state mutation needed.
+  // re-renders.  We just close the popup - no local state mutation needed.
   async confirmSlider() {
     const name = document.getElementById('slider-name').value.trim()
     if (!name) { document.getElementById('slider-name').focus(); return }

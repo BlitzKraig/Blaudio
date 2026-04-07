@@ -71,7 +71,7 @@ Arduino Nano (USB Serial)          Windows PC
 ## Project Structure
 
 ```
-blaudio.py              App entry point — creates pywebview window, wires tray and serial
+blaudio.py              App entry point - creates pywebview window, wires tray and serial
 api.py                  Public API class exposed to JS via pywebview's js_api
 serial_reader.py        Serial communication with Arduino, protocol parsing, value smoothing
 slider.py               Slider data model (name, apps, volume, knob index, mute state)
@@ -91,7 +91,7 @@ hardware/
 
 ui/web/
   index.html            Main application window (HTML shell)
-  style.css             Theme system — Dark, Light, Ocean, Synthwave + noUiSlider overrides
+  style.css             Theme system - Dark, Light, Ocean, Synthwave + noUiSlider overrides
   vendor/               Bundled third-party libraries (noUiSlider 15.8.1, Sortable.js 1.15.6)
   app.js                App init, bootstrap, and window.blaudio namespace assembly
   js/
@@ -240,14 +240,14 @@ To start Blaudio on login, create a shortcut in:
 
 ## UI Development
 
-The UI lives entirely in `ui/web/` — plain HTML, CSS, and vanilla JavaScript. No build step, no framework, no tooling required. You can open `ui/web/index.html` directly in any browser to work on the design.
+The UI lives entirely in `ui/web/` - plain HTML, CSS, and vanilla JavaScript. No build step, no framework, no tooling required. You can open `ui/web/index.html` directly in any browser to work on the design.
 
 **Bundled vendor libraries** (in `ui/web/vendor/`, no CDN required):
 
 | Library | Version | Purpose |
 | ------- | ------- | ------- |
-| [noUiSlider](https://refreshless.com/nouislider/) | 15.8.1 | Custom range sliders — coloured fill track, styled via CSS custom properties |
-| [Sortable.js](https://sortablejs.github.io/Sortable/) | 1.15.6 | Animated drag-to-reorder for slider columns — spring-eased "make room" transitions |
+| [noUiSlider](https://refreshless.com/nouislider/) | 15.8.1 | Custom range sliders - coloured fill track, styled via CSS custom properties |
+| [Sortable.js](https://sortablejs.github.io/Sortable/) | 1.15.6 | Animated drag-to-reorder for slider columns - spring-eased "make room" transitions |
 
 ### Files
 
@@ -268,10 +268,10 @@ The UI lives entirely in `ui/web/` — plain HTML, CSS, and vanilla JavaScript. 
 
 ### Browser-first development
 
-`js/state.js` defines a `MOCK_STATE` object with sample sliders. When `index.html` is opened directly in a browser (without pywebview), the UI initialises from this mock data instead of calling Python. This means you can iterate on layout and styling entirely in your browser — no Python runtime needed.
+`js/state.js` defines a `MOCK_STATE` object with sample sliders. When `index.html` is opened directly in a browser (without pywebview), the UI initialises from this mock data instead of calling Python. This means you can iterate on layout and styling entirely in your browser - no Python runtime needed.
 
 ```javascript
-// js/state.js — edit this to change the design preview data
+// js/state.js - edit this to change the design preview data
 const MOCK_STATE = {
   version: 'v0.1.2',
   masterVolume: 50,
@@ -293,17 +293,17 @@ All design tokens are defined as CSS variables at the top of `style.css`. Change
   --bg-secondary:  #222222;   /* panel/card background  */
   --bg-hover:      #2a2a2a;   /* hover state */
   --bg-input:      #2d2d2d;   /* input fields */
-  --accent:        #9C27B0;   /* purple — buttons, sliders, focus rings */
+  --accent:        #9C27B0;   /* purple - buttons, sliders, focus rings */
   --accent-hover:  #AB47BC;
   --danger:        #e53935;   /* delete / muted state */
   --text-primary:  #e0e0e0;
   --text-secondary:#9e9e9e;
   --text-muted:    #4a4a4a;
   --divider:       #2e2e2e;
-  --vu-low:        #00e676;   /* VU meter — safe level  */
-  --vu-mid:        #ffee58;   /* VU meter — caution     */
-  --vu-hi:         #ff9800;   /* VU meter — warning     */
-  --vu-peak:       #f44336;   /* VU meter — peak/clip   */
+  --vu-low:        #00e676;   /* VU meter - safe level  */
+  --vu-mid:        #ffee58;   /* VU meter - caution     */
+  --vu-hi:         #ff9800;   /* VU meter - warning     */
+  --vu-peak:       #f44336;   /* VU meter - peak/clip   */
   --vu-tick:       rgba(255,255,255,0.9); /* peak-hold tick */
 }
 ```
@@ -324,13 +324,13 @@ const muted = await window.pywebview.api.toggle_master_mute()
 **Python → JS (hardware updates):**
 
 ```python
-# api.py — push a real-time event to the frontend
+# api.py - push a real-time event to the frontend
 self._push('master_volume', {'volume': knob_value})
 self._push('notification',  {'message': 'Button 0 pressed'})
 ```
 
 ```javascript
-// js/api_bridge.js — handle incoming events
+// js/api_bridge.js - handle incoming events
 _receive(payload) {
   const { event, data } = payload
   switch (event) {
@@ -376,8 +376,8 @@ The `ui/web/` directory is self-contained. To replace the UI with a different fr
 1. Click "Add Slider" in the toolbar
 2. Enter a name for the slider
 3. Select running applications from the checklist (or choose "All Unassigned")
-4. Optionally assign a hardware knob — click **Detect** and sweep the knob from min to max
-5. Optionally assign a hardware mute button — click **Detect** and press the button
+4. Optionally assign a hardware knob - click **Detect** and sweep the knob from min to max
+5. Optionally assign a hardware mute button - click **Detect** and press the button
 6. The slider appears in the scrollable area and persists across restarts
 
 ## Current Status

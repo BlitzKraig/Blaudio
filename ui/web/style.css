@@ -266,7 +266,7 @@ body {
   background: var(--accent);
 }
 
-/* Handle — circular, 16×16, accent coloured */
+/* Handle - circular, 16×16, accent coloured */
 .noUi-handle {
   width:         16px !important;
   height:        16px !important;
@@ -343,7 +343,7 @@ body {
   );
 }
 
-/* Peak-hold tick — floats at the highest recent level, then falls */
+/* Peak-hold tick - floats at the highest recent level, then falls */
 .vu-peak {
   position: absolute;
   left: 50%;
@@ -401,9 +401,9 @@ body.layout-horizontal .vu-peak {
 /* ── Drag-to-reorder (Sortable.js) ──────────────────────────────── */
 .slider-label          { cursor: grab; }
 .slider-label:active   { cursor: grabbing; }
-/* chosenClass — the item following the cursor */
+/* chosenClass - the item following the cursor */
 .slider-col.dragging   { opacity: 0.35; cursor: grabbing; }
-/* ghostClass — invisible placeholder; other items animate around it */
+/* ghostClass - invisible placeholder; other items animate around it */
 .slider-col.slider-ghost { opacity: 0 !important; }
 
 /* ── Slider controls ────────────────────────────────────────────── */

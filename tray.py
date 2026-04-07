@@ -35,7 +35,7 @@ class Tray:
         self._update_version = version
         try:
             self._icon.notify(
-                f'Version {version} is available — open Settings to download.',
+                f'Version {version} is available - open Settings to download.',
                 'Blaudio Update',
             )
         except Exception:

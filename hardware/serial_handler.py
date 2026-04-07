@@ -8,7 +8,7 @@ class SerialHandler:
 
     Receives knob/button data from SerialReader callbacks and calls back into
     the Api for state updates and audio control. No imports of api.py are
-    needed — the Api instance is passed in at construction time to avoid
+    needed - the Api instance is passed in at construction time to avoid
     circular imports.
     """
 
@@ -48,7 +48,7 @@ class SerialHandler:
     def start_knob_detection(self, callback):
         """
         Enter knob-detection mode.  The first knob swept from low (≤_KNOB_LOW)
-        to high (≥_KNOB_HIGH) — or high to low — fires callback(knob_index) and
+        to high (≥_KNOB_HIGH) - or high to low - fires callback(knob_index) and
         exits detection mode automatically.
         """
         self._knob_detection_callback = callback
@@ -91,7 +91,7 @@ class SerialHandler:
                 self._api._master_volume  = knob_value
                 master_slider.volume      = knob_value
                 # Push UI update first so the display is always responsive,
-                # then apply audio — a COM/pycaw error must not kill this thread.
+                # then apply audio - a COM/pycaw error must not kill this thread.
                 self._api._push('master_volume', {'volume': knob_value})
                 try:
                     self._api._audio.apply_master_volume(knob_value)

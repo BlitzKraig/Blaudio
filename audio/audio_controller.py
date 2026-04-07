@@ -8,7 +8,7 @@ _com_local = threading.local()
 
 # HRESULT returned when CoInitialize is called on a thread that already has
 # COM initialised with a different apartment model (e.g. Edge WebView2 uses
-# COINIT_MULTITHREADED).  This is not an error — we can still use COM objects.
+# COINIT_MULTITHREADED).  This is not an error - we can still use COM objects.
 _RPC_E_CHANGED_MODE = -2147417850  # 0x80010106 as a signed 32-bit int
 
 
@@ -20,7 +20,7 @@ def ensure_com():
         except OSError as e:
             if getattr(e, 'winerror', None) != _RPC_E_CHANGED_MODE:
                 print(f'[audio] CoInitialize failed: {e!r}')
-            # Either RPC_E_CHANGED_MODE (COM already initialised by WebView2 — fine)
+            # Either RPC_E_CHANGED_MODE (COM already initialised by WebView2 - fine)
             # or another transient error.  Mark as ready and proceed; pycaw works
             # in both STA and MTA contexts for the interfaces we use.
         _com_local.ready = True

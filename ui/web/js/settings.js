@@ -150,7 +150,7 @@ Object.assign(window.blaudio, {
       return
     }
 
-    // Idle — show version and manual check button.
+    // Idle - show version and manual check button.
     el.innerHTML = `
       <div class="detect-row">
         <span class="detect-label">Version ${this.state.version ?? ''}</span>

@@ -68,13 +68,13 @@ Object.assign(window.blaudio, {
     this._renderUpdateSection()
   },
 
-  // Called when a popup window creates/edits a slider — sync main window state.
+  // Called when a popup window creates/edits a slider - sync main window state.
   _onSlidersChanged(sliders) {
     this.state.sliders = sliders
     this._renderSliders()
   },
 
-  // Called when a popup window saves a UI setting — sync main window appearance.
+  // Called when a popup window saves a UI setting - sync main window appearance.
   _onSettingsChanged(key, value) {
     if (key === 'theme') {
       this._applyTheme(value)
