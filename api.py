@@ -12,6 +12,7 @@ from hardware.serial_handler import SerialHandler
 from slider_data import SliderData
 from serial_reader import SerialReader
 from slider import Slider
+from updater import Updater
 
 
 def screen_center_x(width):
@@ -96,6 +97,17 @@ class Api:
 
         self._port_detection_active = False
 
+        # ── Auto-updater (frozen exe only) ───────────────────────────
+        self._tray           = None
+        self._pending_update = None   # set when update_available fires
+        self._updater        = None
+        if getattr(sys, 'frozen', False):
+            self._updater = Updater(
+                current_version=self._version,
+                app_exe_path=sys.executable,
+                on_event=self._on_updater_event,
+            )
+
         self._serial_handler = SerialHandler(self.config, self)
         self._serial_reader  = SerialReader(
             self.config['COM_PORT'],
@@ -104,6 +116,18 @@ class Api:
             message_callback=self._serial_handler.on_message,
         )
 
+    def set_tray(self, tray):
+        self._tray = tray
+
+    def _on_updater_event(self, event, data):
+        """Relay updater callbacks to JS (both windows) and the tray icon."""
+        self._push(event, data)
+        self._push_popup(event, data)
+        if event == 'update_available':
+            self._pending_update = data
+            if self._tray:
+                self._tray.notify_update(data['version'])
+
     def set_window(self, window):
         self._window = window
         self._peak_meter = PeakMeter(
@@ -111,6 +135,8 @@ class Api:
             push_fn=self._push,
         )
         self._peak_meter.start()
+        if self._updater:
+            threading.Timer(3.0, self._updater.check_async).start()
 
     # ── JS-callable API ──────────────────────────────────────────────
 
@@ -319,6 +345,26 @@ class Api:
             return self._sliders[index].mute
         return False
 
+    def check_for_update(self):
+        """JS-callable: manually trigger an update check."""
+        if self._updater:
+            self._updater.check_async()
+
+    def download_update(self, download_url, size):
+        """JS-callable: begin downloading the queued update."""
+        if self._updater:
+            self._updater.download_and_install(download_url, int(size))
+
+    def cancel_update_download(self):
+        """JS-callable: abort an in-progress download."""
+        if self._updater:
+            self._updater.cancel_download()
+
+    def install_update(self):
+        """JS-callable: quit so the waiting PowerShell script can swap the exe."""
+        # Short delay so pywebview can return the call result before the window dies.
+        threading.Timer(0.5, self.quit).start()
+
     def open_mixer(self):
         self._audio.open_mixer()
 
@@ -355,6 +401,12 @@ class Api:
             self._save_timer.cancel()
         self._slider_data.save(should_notify=False)
         self._slider_data.save_master(should_notify=False)
+        if self._popup_window:
+            try:
+                self._popup_window.destroy()
+            except Exception:
+                pass
+            self._popup_window = None
         if self._window:
             self._window.destroy()
 
@@ -411,8 +463,8 @@ class Api:
         url = os.path.join(self._ui_path, 'ui', 'web', 'settings.html')
         self._popup_window = webview.create_window(
             'Settings', url, js_api=self,
-            width=420, height=458,
-            x=screen_center_x(420), y=screen_center_y(458),
+            width=420, height=560,
+            x=screen_center_x(420), y=screen_center_y(560),
             resizable=False,
             background_color='#1a1a1a',
             frameless=True,
@@ -422,9 +474,11 @@ class Api:
     def get_popup_context(self):
         """Called by a popup window on load to get its initial state."""
         ctx = {
-            'editIndex': self._pending_edit_index,
-            'theme':     self._ui_settings.get('theme',  'dark'),
-            'layout':    self._ui_settings.get('layout', 'vertical'),
+            'editIndex':     self._pending_edit_index,
+            'theme':         self._ui_settings.get('theme',  'dark'),
+            'layout':        self._ui_settings.get('layout', 'vertical'),
+            'version':       self._version,
+            'pendingUpdate': self._pending_update,
         }
         if 0 <= self._pending_edit_index < len(self._sliders):
             ctx['slider'] = self._sliders[self._pending_edit_index].serialize()

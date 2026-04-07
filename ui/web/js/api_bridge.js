@@ -19,7 +19,53 @@ Object.assign(window.blaudio, {
       case 'peak_levels':      this._updatePeakMeters(data);                   break
       case 'sliders_changed':  this._onSlidersChanged(data.sliders);           break
       case 'settings_changed': this._onSettingsChanged(data.key, data.value);  break
+      case 'update_available': this._onUpdateAvailable(data);                  break
+      case 'update_progress':  this._onUpdateProgress(data);                   break
+      case 'update_complete':  this._onUpdateComplete();                        break
+      case 'update_error':     this._onUpdateError(data);                       break
     }
+  },
+
+  // ── Update state fields ──────────────────────────────────────────────────
+  _updateInfo:               null,
+  _updateDownloading:        false,
+  _updateDownloadPercent:    0,
+  _updateReady:              false,
+  _updateCheckUserTriggered: false,
+
+  // ── Update event handlers ────────────────────────────────────────────────
+
+  _onUpdateAvailable(data) {
+    this._updateInfo = data
+    this.state.updateAvailable = true
+    this._renderUpdateSection()
+    this.showToast(`Update available: ${data.version}`)
+  },
+
+  _onUpdateProgress(data) {
+    this._renderUpdateProgress(data.percent)
+  },
+
+  _onUpdateComplete() {
+    this._renderUpdateComplete()
+  },
+
+  _onUpdateError(data) {
+    const userTriggered = this._updateCheckUserTriggered
+    this._updateCheckUserTriggered = false
+    // Suppress toast for silent startup network errors.
+    if (userTriggered || data.reason !== 'network') {
+      const msgs = {
+        network:          'Could not reach update server.',
+        download_network: 'Download failed. Check your connection.',
+        disk:             'Could not write update file.',
+        unknown:          'Update failed.',
+      }
+      this.showToast(msgs[data.reason] || 'Update failed.')
+    }
+    this._updateDownloading     = false
+    this._updateDownloadPercent = 0
+    this._renderUpdateSection()
   },
 
   // Called when a popup window creates/edits a slider — sync main window state.
@@ -148,6 +194,39 @@ Object.assign(window.blaudio, {
 
   async hideWindow() {
     if (window.pywebview) await window.pywebview.api.hide_window()
-  }
+  },
+
+  async _apiCheckForUpdate() {
+    this._updateCheckUserTriggered = true
+    if (window.pywebview) {
+      await window.pywebview.api.check_for_update()
+    } else {
+      // Mock: simulate a found update after a short delay.
+      setTimeout(() => this._onUpdateAvailable({
+        version: 'v9.9.9', notes: 'Mock update notes.', download_url: '#', size: 1048576,
+      }), 800)
+    }
+  },
+
+  async _apiDownloadUpdate(downloadUrl, size) {
+    if (window.pywebview) await window.pywebview.api.download_update(downloadUrl, size)
+    else {
+      // Mock: simulate download progress.
+      let pct = 0
+      const tick = setInterval(() => {
+        pct = Math.min(pct + 10, 100)
+        this._onUpdateProgress({ percent: pct, downloaded: pct * 10000, total: 1000000 })
+        if (pct >= 100) { clearInterval(tick); this._onUpdateComplete() }
+      }, 200)
+    }
+  },
+
+  async _apiCancelUpdateDownload() {
+    if (window.pywebview) await window.pywebview.api.cancel_update_download()
+  },
+
+  async _apiInstallUpdate() {
+    if (window.pywebview) await window.pywebview.api.install_update()
+  },
 
 })

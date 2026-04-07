@@ -20,6 +20,7 @@ Object.assign(window.blaudio, {
     this._renderThemePicker()
     this._renderLayoutPicker()
     this._renderPortDetection()
+    this._renderUpdateSection()
     document.getElementById('settings-overlay').classList.remove('hidden')
   },
 
@@ -113,6 +114,96 @@ Object.assign(window.blaudio, {
     this._detectedPort  = null
     this._renderPortDetection()
     this.showToast('No device found. Make sure it is plugged in and sweep a knob.')
+  },
+
+  _renderUpdateSection() {
+    const el = document.getElementById('update-section')
+    if (!el) return
+
+    if (this._updateReady) {
+      el.innerHTML = `
+        <div class="detect-row">
+          <span class="detect-label">Ready to install ${this._updateInfo?.version ?? ''}</span>
+          <button class="btn-accent" onclick="blaudio._doInstallUpdate()">Restart &amp; Install</button>
+        </div>`
+      return
+    }
+
+    if (this._updateDownloading) {
+      el.innerHTML = `
+        <div class="detect-row">
+          <span class="detect-label">Downloading\u2026 <span id="update-pct">${this._updateDownloadPercent}%</span></span>
+          <button class="btn-flat" onclick="blaudio._doCancelDownload()">Cancel</button>
+        </div>
+        <div id="update-progress-bar" style="height:3px;background:var(--divider);border-radius:2px;margin-top:4px;overflow:hidden;">
+          <div style="height:100%;width:${this._updateDownloadPercent}%;background:var(--accent);transition:width 0.2s ease;border-radius:2px;"></div>
+        </div>`
+      return
+    }
+
+    if (this.state.updateAvailable && this._updateInfo) {
+      el.innerHTML = `
+        <div class="detect-row">
+          <span class="detect-label">${this._updateInfo.version} available</span>
+          <button class="btn-accent" onclick="blaudio._doDownloadUpdate()">Download</button>
+        </div>`
+      return
+    }
+
+    // Idle — show version and manual check button.
+    el.innerHTML = `
+      <div class="detect-row">
+        <span class="detect-label">Version ${this.state.version ?? ''}</span>
+        <button class="btn-flat" onclick="blaudio._doCheckForUpdate()">Check for updates</button>
+      </div>`
+  },
+
+  _renderUpdateProgress(percent) {
+    this._updateDownloadPercent = percent
+    // Fast path: update text + bar width without a full re-render.
+    const pctEl = document.getElementById('update-pct')
+    const barEl = document.querySelector('#update-progress-bar div')
+    if (pctEl && barEl) {
+      pctEl.textContent  = `${percent}%`
+      barEl.style.width  = `${percent}%`
+    } else {
+      this._renderUpdateSection()
+    }
+  },
+
+  _renderUpdateComplete() {
+    this._updateDownloading     = false
+    this._updateDownloadPercent = 0
+    this._updateReady           = true
+    this._renderUpdateSection()
+    this.showToast('Update downloaded. Ready to install.')
+  },
+
+  _doCheckForUpdate() {
+    const el = document.getElementById('update-section')
+    if (el) el.innerHTML = `<span class="detect-label">Checking\u2026</span>`
+    this._apiCheckForUpdate()
+  },
+
+  _doDownloadUpdate() {
+    if (!this._updateInfo) return
+    this._updateDownloading     = true
+    this._updateDownloadPercent = 0
+    this._renderUpdateSection()
+    this._apiDownloadUpdate(this._updateInfo.download_url, this._updateInfo.size)
+  },
+
+  _doCancelDownload() {
+    this._apiCancelUpdateDownload()
+    this._updateDownloading     = false
+    this._updateDownloadPercent = 0
+    this._renderUpdateSection()
+  },
+
+  _doInstallUpdate() {
+    const el = document.getElementById('update-section')
+    if (el) el.innerHTML = `<span class="detect-label">Restarting\u2026</span>`
+    setTimeout(() => this._apiInstallUpdate(), 300)
   },
 
   _renderPortDetection() {

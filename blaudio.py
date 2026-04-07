@@ -62,6 +62,7 @@ if __name__ == '__main__':
     window.events.closing += on_closing
 
     tray = Tray(api)
+    api.set_tray(tray)
 
     if start_hidden:
         # Hide only after the page has fully loaded so WebView2 finishes

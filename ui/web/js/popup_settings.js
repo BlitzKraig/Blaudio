@@ -37,6 +37,13 @@ document.addEventListener('DOMContentLoaded', () => {
       window.blaudio._renderThemePicker()
       window.blaudio._renderLayoutPicker()
       window.blaudio._renderPortDetection()
+      window.blaudio.state.version = ctx.version || ''
+      if (ctx.pendingUpdate) {
+        // Update was already found — skip the idle state and go straight to ready.
+        window.blaudio._onUpdateAvailable(ctx.pendingUpdate)
+      } else {
+        window.blaudio._renderUpdateSection()
+      }
       document.getElementById('settings-overlay').classList.remove('hidden')
     })
   }
