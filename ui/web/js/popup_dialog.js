@@ -39,7 +39,7 @@ Object.assign(window.blaudio, {
 document.addEventListener('DOMContentLoaded', () => {
   function start() {
     window.pywebview.api.get_popup_context().then(ctx => {
-      document.documentElement.setAttribute('data-theme', ctx.theme || 'dark')
+      window.blaudio._applyTheme(ctx.theme || 'dark')
 
       const slider = (ctx.editIndex >= 0 && ctx.slider) ? ctx.slider : null
       window.blaudio._editIndex          = slider ? ctx.editIndex          : null
