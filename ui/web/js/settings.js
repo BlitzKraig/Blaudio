@@ -7,12 +7,7 @@ Object.assign(window.blaudio, {
   _currentLayout:  'vertical',
   _portDetecting:  false,
   _detectedPort:   null,
-  _themes: [
-    { id: 'dark',      label: 'Dark',      bg: '#1a1a1a', accent: '#9C27B0' },
-    { id: 'light',     label: 'Light',     bg: '#f4f4f5', accent: '#9C27B0' },
-    { id: 'ocean',     label: 'Ocean',     bg: '#0d1b2a', accent: '#00BCD4' },
-    { id: 'synthwave', label: 'Synthwave', bg: '#0a0010', accent: '#e040fb' },
-  ],
+  _themes: window.BLAUDIO_THEMES,
 
   async openSettings() {
     if (window.pywebview) { await this._apiOpenSettingsWindow(); return }
@@ -49,8 +44,41 @@ Object.assign(window.blaudio, {
   },
 
   _applyTheme(id) {
-    document.documentElement.setAttribute('data-theme', id)
+    const theme = this._themes.find(t => t.id === id)
+    if (!theme) return
+
+    const root = document.documentElement
+    if (theme.vars) {
+      for (const [prop, val] of Object.entries(theme.vars)) {
+        root.style.setProperty(prop, val)
+      }
+    }
+
+    let sheet = document.getElementById('blaudio-theme-effects')
+    if (sheet) sheet.remove()
+    if (theme.effects && theme.effects.length) {
+      sheet = document.createElement('style')
+      sheet.id = 'blaudio-theme-effects'
+      sheet.textContent = theme.effects.join('\n')
+      document.head.appendChild(sheet)
+    }
+
+    root.setAttribute('data-theme', id)
     this._currentTheme = id
+  },
+
+  _validateThemes() {
+    const allKeys = new Set()
+    this._themes.forEach(t => {
+      if (t.vars) Object.keys(t.vars).forEach(k => allKeys.add(k))
+    })
+    this._themes.forEach(t => {
+      allKeys.forEach(k => {
+        if (!t.vars || !(k in t.vars)) {
+          console.warn(`Theme "${t.id}" missing var "${k}"`)
+        }
+      })
+    })
   },
 
   _applyLayout(layout) {

@@ -6,7 +6,7 @@ Object.assign(window.blaudio, {
   _advancedSettings: {
     autoSaveInterval:  300,
     smoothingWindow:   10,
-    callbackInterval:  0.02,
+    callbackInterval:  0.1,
     knobDetectionLow:  10,
     knobDetectionHigh: 90,
   },
@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function start() {
     if (window.pywebview) {
       window.pywebview.api.get_popup_context().then(ctx => {
+        document.documentElement.setAttribute('data-theme', ctx.theme || 'dark')
         if (ctx.advancedSettings) window.blaudio._advancedSettings = ctx.advancedSettings
         window.blaudio._renderAdvancedSection()
         document.getElementById('settings-overlay').classList.remove('hidden')

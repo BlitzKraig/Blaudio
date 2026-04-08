@@ -7,6 +7,7 @@ Object.assign(window.blaudio, {
 
   init(state) {
     // Prefer server-persisted settings; fall back to localStorage for browser testing.
+    this._validateThemes()
     this._applyTheme(state.theme   || localStorage.getItem('blaudio-theme')   || 'dark')
     this._applyLayout(state.layout || localStorage.getItem('blaudio-layout') || 'vertical')
     this.state = state

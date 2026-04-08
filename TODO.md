@@ -46,7 +46,7 @@ Unassigned buttons show a notification prompting the user to map them.
 
 ### ~~BLA-007 · Single-instance enforcement~~ ✅ DONE
 
-`single_instance.py` binds a localhost TCP socket (port 34714) as the instance lock.
+`single_instance.py` binds a localhost TCP socket (port 25346) as the instance lock.
 A second launch connects to that socket, sends a `show` command, and exits immediately.
 The first instance's listener thread calls `api.show_window()` on receipt.
 

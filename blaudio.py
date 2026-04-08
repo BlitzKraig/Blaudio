@@ -46,7 +46,7 @@ if __name__ == '__main__':
         background_color='#1a1a1a',
         frameless=True,
         on_top=True,
-        easy_drag=False
+        easy_drag=False,
     )
 
     api.set_window(window)

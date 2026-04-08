@@ -15,6 +15,14 @@ from slider import Slider
 from updater import Updater
 
 
+def _load_theme_bg(ui_path):
+    themes_js = os.path.join(ui_path, 'ui', 'web', 'js', 'themes.js')
+    with open(themes_js, encoding='utf-8') as f:
+        src = f.read()
+    data = json.loads(src[src.index('['):src.rindex(']') + 1])
+    return {t['id']: t['bg'] for t in data}
+
+
 def screen_center_x(width):
     monitors = get_monitors()
     if monitors:
@@ -74,6 +82,7 @@ class Api:
         except (FileNotFoundError, json.JSONDecodeError):
             self._ui_settings = {}
 
+        self._theme_bg           = _load_theme_bg(self._ui_path)
         self._window             = None
         self._popup_window       = None
         self._pending_edit_index = -1
@@ -495,9 +504,9 @@ class Api:
             width=420, height=500,
             x=screen_center_x(420), y=screen_center_y(500),
             resizable=False,
-            background_color='#1a1a1a',
+            background_color=self._theme_bg.get(self._ui_settings.get('theme', 'dark'), '#1a1a1a'),
             frameless=True,
-            on_top=True
+            on_top=True,
         )
 
     def open_settings_window(self):
@@ -515,9 +524,9 @@ class Api:
             width=420, height=560,
             x=screen_center_x(420), y=screen_center_y(560),
             resizable=False,
-            background_color='#1a1a1a',
+            background_color=self._theme_bg.get(self._ui_settings.get('theme', 'dark'), '#1a1a1a'),
             frameless=True,
-            on_top=True
+            on_top=True,
         )
 
     def get_popup_context(self):
@@ -556,9 +565,9 @@ class Api:
             width=self._popup_width, height=500,
             x=screen_center_x(self._popup_width), y=screen_center_y(500),
             resizable=False,
-            background_color='#1a1a1a',
+            background_color=self._theme_bg.get(self._ui_settings.get('theme', 'dark'), '#1a1a1a'),
             frameless=True,
-            on_top=True
+            on_top=True,
         )
 
     def close_popup_window(self):
